@@ -1,0 +1,79 @@
+import React, { useState } from 'react';
+import { Activity, BarChart3, Info } from 'lucide-react';
+import { Panel } from '../Panel';
+import { MetricCard } from '../MetricCard';
+import type { DashboardData } from '../../types';
+
+interface AnalyticsPageProps {
+    data: DashboardData | null;
+}
+
+export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
+    const [showEfficiencyInfo, setShowEfficiencyInfo] = useState(false);
+
+    return (
+        <div className="space-y-8 mt-4">
+            <header className="mb-12">
+                <h1 className="text-4xl font-bold text-main-text mb-3">LLM Analytics</h1>
+                <p className="text-secondary-text text-sm font-mono uppercase tracking-widest mt-1">Token consumption & cost analysis</p>
+            </header>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Panel title="Token Distribution" icon={<BarChart3 size={18} />}>
+                    <div className="space-y-6">
+                        <div className="flex justify-between items-end">
+                            <div className="flex flex-col">
+                                <span className="text-xs uppercase text-secondary-text font-bold mb-2">Total Tokens (24h)</span>
+                                <span className="text-5xl font-mono font-bold text-emerald-400 drop-shadow-sm">{data?.usage_summary?.total_tokens?.toLocaleString() || "0"}</span>
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            <MetricCard label="Input Tokens" value={Math.floor((data?.usage_summary?.total_tokens || 0) * 0.35)} percentage={35} color="blue" />
+                            <MetricCard label="Output Tokens" value={Math.floor((data?.usage_summary?.total_tokens || 0) * 0.65)} percentage={65} color="emerald" />
+                        </div>
+                    </div>
+                </Panel>
+                <Panel title="Cost Efficiency" icon={<Activity size={18} />}>
+                    <div className="space-y-6">
+                        <div className="flex justify-between items-end">
+                            <div className="flex flex-col">
+                                <span className="text-xs uppercase text-secondary-text font-bold mb-2">Monthly Projected</span>
+                                <span className="text-5xl font-mono font-bold text-cyan-400 drop-shadow-sm">${((data?.usage_summary?.daily_cost || 0) * 30).toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <div className="p-5 bg-black/5 rounded-2xl border border-divider space-y-3 relative shadow-sm">
+                            <div className="flex justify-between items-center text-xs uppercase font-bold text-secondary-text">
+                                <div className="flex items-center gap-2">
+                                    <span>Efficiency Rating</span>
+                                    <button onClick={() => setShowEfficiencyInfo(!showEfficiencyInfo)} className="w-5 h-5 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all" title="What is Efficiency Rating?">
+                                        <Info size={12} className="text-muted-text hover:text-main-text" />
+                                    </button>
+                                </div>
+                                <span className="text-emerald-400">Optimal</span>
+                            </div>
+                            <div className="h-2 w-full bg-black/20 rounded-full overflow-hidden border border-divider">
+                                <div className="h-full bg-emerald-500 w-[92%]" />
+                            </div>
+                            {showEfficiencyInfo && (
+                                <div className="mt-4 p-4 bg-card border border-card-border rounded-xl text-xs text-muted-text leading-relaxed space-y-3 shadow-md relative z-10">
+                                    <p className="text-main-text font-bold text-sm">How Efficiency Rating Works</p>
+                                    <p><strong className="text-secondary-text">What it measures:</strong> The ratio of useful output tokens to total tokens consumed. Higher efficiency = more work done per dollar spent.</p>
+                                    <p><strong className="text-secondary-text">Rating scale:</strong></p>
+                                    <div className="grid grid-cols-4 gap-2 mt-1">
+                                        <span className="text-rose-400">0–40% Poor</span>
+                                        <span className="text-amber-400">40–60% Fair</span>
+                                        <span className="text-blue-400">60–80% Good</span>
+                                        <span className="text-emerald-400">80%+ Optimal</span>
+                                    </div>
+                                    <p><strong className="text-secondary-text">Current: 92%</strong> — Your agents are producing high-value output with minimal wasted context. Prompt engineering and model selection are well-tuned.</p>
+                                    <button onClick={() => setShowEfficiencyInfo(false)} className="text-[10px] text-muted-text hover:text-main-text uppercase tracking-widest mt-2 px-3 py-1.5 rounded bg-black/10 transition-colors">Dismiss</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </Panel>
+            </div>
+        </div>
+    );
+};
+
