@@ -8,9 +8,9 @@ interface ActivityFeedProps {
 }
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-    completion: { icon: CheckCircle, color: '#10b981', label: 'Completed' },
-    delegation: { icon: ArrowRight, color: '#3b82f6', label: 'Delegated' },
-    milestone: { icon: Flag, color: '#8b5cf6', label: 'Milestone' },
+    completion: { icon: CheckCircle, color: '#f59e0b', label: 'Completed' },
+    delegation: { icon: ArrowRight, color: '#6366f1', label: 'Delegated' },
+    milestone: { icon: Flag, color: '#6366f1', label: 'Milestone' },
 };
 
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({ events }) => {
@@ -25,13 +25,13 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ events }) => {
                     <p className="text-zinc-600 font-mono text-[10px] uppercase tracking-widest">Completions • Milestones • Delegations</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 rounded-full">
-                        <Trophy size={10} className="text-emerald-400" />
-                        <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest">{successEvents.filter(e => e.type === 'completion').length} wins</span>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 rounded-full">
+                        <Trophy size={10} className="text-amber-400" />
+                        <span className="text-[9px] font-bold text-amber-400 uppercase tracking-widest">{successEvents.filter(e => e.type === 'completion').length} wins</span>
                     </div>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-500/10 rounded-full">
-                        <Flag size={10} className="text-violet-400" />
-                        <span className="text-[9px] font-bold text-violet-400 uppercase tracking-widest">{successEvents.filter(e => e.type === 'milestone').length} milestones</span>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-500/10 rounded-full">
+                        <Flag size={10} className="text-indigo-400" />
+                        <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">{successEvents.filter(e => e.type === 'milestone').length} milestones</span>
                     </div>
                 </div>
             </div>

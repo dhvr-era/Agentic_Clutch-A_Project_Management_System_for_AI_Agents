@@ -15,8 +15,8 @@ export interface Mission {
 
 export const MISSION_COLUMNS: { key: MissionStatus; label: string; color: string }[] = [
     { key: 'inbox', label: 'Inbox', color: '#71717a' },
-    { key: 'assigned', label: 'Assigned', color: '#3b82f6' },
-    { key: 'in_progress', label: 'In Progress', color: '#f59e0b' },
-    { key: 'review', label: 'Review', color: '#8b5cf6' },
-    { key: 'done', label: 'Done', color: '#10b981' },
+    { key: 'assigned', label: 'Assigned', color: '#6366f1' },
+    { key: 'in_progress', label: 'In Progress', color: '#6366f1' },
+    { key: 'review', label: 'Review', color: '#6366f1' },
+    { key: 'done', label: 'Done', color: '#f59e0b' },
 ];

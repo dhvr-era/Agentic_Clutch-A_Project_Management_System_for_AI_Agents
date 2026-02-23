@@ -4,29 +4,47 @@ import type { Mission } from '../types/mission';
 import type { ActivityEvent } from '../types/activity';
 import type { Project } from '../types/project';
 
+// ── Tier Colour System (orange = Squad Lead, blue = Workhorse) ──
+export const TIER_COLORS = {
+    lead: {
+        primary: '#f59e0b', // amber-500
+        secondary: '#d97706', // amber-600
+        tertiary: '#fbbf24', // amber-400
+        bg: 'rgba(245,158,11,0.12)',
+        border: 'rgba(245,158,11,0.25)',
+    },
+    workhorse: {
+        primary: '#6366f1', // indigo-500
+        secondary: '#6366f1', // indigo-500
+        tertiary: '#6366f1', // indigo-500
+        bg: 'rgba(59,130,246,0.12)',
+        border: 'rgba(59,130,246,0.25)',
+    },
+};
+
 // ── Agent Configuration: 3 Squad Leads + 3 Workhorses each ──
 export const AGENTS_INITIAL: AgentConfig[] = [
-    // ── Squad Lead 1: Alpha ──
-    { id: 'alpha', parentId: null, name: 'Alpha', role: 'Squad Lead', tier: 'Top', color: '#10b981', status: 'running', model: 'gpt-4o', provider: 'OpenRouter', icon: Server },
-    { id: 'beta', parentId: 'alpha', name: 'Beta', role: 'Engineer', tier: 'Workhorse', color: '#06b6d4', status: 'busy', desc: 'gemini-1.5-flash • OPENCLAW', model: 'gemini-1.5-flash', provider: 'OpenRouter', icon: MessagesSquare },
-    { id: 'pico', parentId: 'alpha', name: 'Pico', role: 'Analyst', tier: 'Workhorse', color: '#f59e0b', status: 'running', desc: 'gpt-4o • OPENCLAW', model: 'gpt-4o', provider: 'OpenRouter', icon: BarChart },
-    { id: 'nova', parentId: 'alpha', name: 'Nova', role: 'Monitor', tier: 'Workhorse', color: '#ec4899', status: 'idle', desc: 'claude-3-haiku • OPENCLAW', model: 'claude-3-haiku', provider: 'OpenRouter', icon: Radio },
+    // ── Squad Lead 1: Alpha (amber-500) ──
+    { id: 'alpha', parentId: null, name: 'Alpha', role: 'Squad Lead', tier: 'Top', color: '#f59e0b', status: 'running', model: 'gpt-4o', provider: 'OpenRouter', icon: Server },
+    { id: 'beta', parentId: 'alpha', name: 'Beta', role: 'Engineer', tier: 'Workhorse', color: '#6366f1', status: 'busy', desc: 'gemini-1.5-flash • OPENCLAW', model: 'gemini-1.5-flash', provider: 'OpenRouter', icon: MessagesSquare },
+    { id: 'pico', parentId: 'alpha', name: 'Pico', role: 'Analyst', tier: 'Workhorse', color: '#818cf8', status: 'running', desc: 'gpt-4o • OPENCLAW', model: 'gpt-4o', provider: 'OpenRouter', icon: BarChart },
+    { id: 'nova', parentId: 'alpha', name: 'Nova', role: 'Monitor', tier: 'Workhorse', color: '#818cf8', status: 'idle', desc: 'claude-3-haiku • OPENCLAW', model: 'claude-3-haiku', provider: 'OpenRouter', icon: Radio },
 
-    // ── Squad Lead 2: Gamma ──
-    { id: 'gamma', parentId: null, name: 'Gamma', role: 'Squad Lead', tier: 'Top', color: '#8b5cf6', status: 'running', model: 'claude-3.5-sonnet', provider: 'OpenRouter', icon: ShieldCheck },
-    { id: 'red', parentId: 'gamma', name: 'Red', role: 'Executor', tier: 'Workhorse', color: '#ef4444', status: 'running', desc: 'claude-3-haiku • OPENCLAW', model: 'claude-3-haiku', provider: 'OpenRouter', icon: Database },
-    { id: 'kilo', parentId: 'gamma', name: 'Kilo', role: 'Engineer', tier: 'Workhorse', color: '#14b8a6', status: 'busy', desc: 'gpt-4o-mini • OPENCLAW', model: 'gpt-4o-mini', provider: 'OpenRouter', icon: Cpu },
-    { id: 'zen', parentId: 'gamma', name: 'Zen', role: 'Analyst', tier: 'Workhorse', color: '#a78bfa', status: 'idle', desc: 'gemini-1.5-pro • OPENCLAW', model: 'gemini-1.5-pro', provider: 'OpenRouter', icon: Brain },
+    // ── Squad Lead 2: Gamma (amber-600) ──
+    { id: 'gamma', parentId: null, name: 'Gamma', role: 'Squad Lead', tier: 'Top', color: '#d97706', status: 'running', model: 'claude-3.5-sonnet', provider: 'OpenRouter', icon: ShieldCheck },
+    { id: 'red', parentId: 'gamma', name: 'Red', role: 'Executor', tier: 'Workhorse', color: '#4f46e5', status: 'running', desc: 'claude-3-haiku • OPENCLAW', model: 'claude-3-haiku', provider: 'OpenRouter', icon: Database },
+    { id: 'kilo', parentId: 'gamma', name: 'Kilo', role: 'Engineer', tier: 'Workhorse', color: '#6366f1', status: 'busy', desc: 'gpt-4o-mini • OPENCLAW', model: 'gpt-4o-mini', provider: 'OpenRouter', icon: Cpu },
+    { id: 'zen', parentId: 'gamma', name: 'Zen', role: 'Analyst', tier: 'Workhorse', color: '#93c5fd', status: 'idle', desc: 'gemini-1.5-pro • OPENCLAW', model: 'gemini-1.5-pro', provider: 'OpenRouter', icon: Brain },
 
-    // ── Squad Lead 3: Sigma ──
-    { id: 'sigma', parentId: null, name: 'Sigma', role: 'Squad Lead', tier: 'Top', color: '#f97316', status: 'idle', model: 'deepseek-v3', provider: 'OpenRouter', icon: Wifi },
-    { id: 'flux', parentId: 'sigma', name: 'Flux', role: 'Engineer', tier: 'Workhorse', color: '#22d3ee', status: 'running', desc: 'deepseek-v3 • OPENCLAW', model: 'deepseek-v3', provider: 'OpenRouter', icon: Cpu },
-    { id: 'arc', parentId: 'sigma', name: 'Arc', role: 'Executor', tier: 'Workhorse', color: '#fb923c', status: 'busy', desc: 'gpt-4o • OPENCLAW', model: 'gpt-4o', provider: 'OpenRouter', icon: Database },
-    { id: 'vex', parentId: 'sigma', name: 'Vex', role: 'Monitor', tier: 'Workhorse', color: '#34d399', status: 'idle', desc: 'claude-3.5-sonnet • OPENCLAW', model: 'claude-3.5-sonnet', provider: 'OpenRouter', icon: Radio },
+    // ── Squad Lead 3: Sigma (amber-400) ──
+    { id: 'sigma', parentId: null, name: 'Sigma', role: 'Squad Lead', tier: 'Top', color: '#fbbf24', status: 'idle', model: 'deepseek-v3', provider: 'OpenRouter', icon: Wifi },
+    { id: 'flux', parentId: 'sigma', name: 'Flux', role: 'Engineer', tier: 'Workhorse', color: '#6366f1', status: 'running', desc: 'deepseek-v3 • OPENCLAW', model: 'deepseek-v3', provider: 'OpenRouter', icon: Cpu },
+    { id: 'arc', parentId: 'sigma', name: 'Arc', role: 'Executor', tier: 'Workhorse', color: '#4f46e5', status: 'busy', desc: 'gpt-4o • OPENCLAW', model: 'gpt-4o', provider: 'OpenRouter', icon: Database },
+    { id: 'vex', parentId: 'sigma', name: 'Vex', role: 'Monitor', tier: 'Workhorse', color: '#818cf8', status: 'idle', desc: 'claude-3.5-sonnet • OPENCLAW', model: 'claude-3.5-sonnet', provider: 'OpenRouter', icon: Radio },
 ];
 
 // Re-export a mutable reference for the old import (AGENTS)
-export let AGENTS = [...AGENTS_INITIAL];
+export const AGENTS = [...AGENTS_INITIAL];
 
 // ── Task Types (expanded) ──
 export type TaskStatus = 'backlog' | 'in_progress' | 'review' | 'done';
@@ -123,18 +141,18 @@ export const INITIAL_TASKS: MyTask[] = [
 
 // ── Missions (Kanban) ──
 export const INITIAL_MISSIONS: Mission[] = [
-    { id: 'mis-1', title: 'Onboard Zendesk Integration', description: 'Connect Zendesk API and sync knowledge base.', status: 'in_progress', assigneeId: 'beta', priority: 'high', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    { id: 'mis-2', title: 'Deploy Market Scanner', description: 'Set up real-time market data feed for Pico.', status: 'assigned', assigneeId: 'pico', priority: 'critical', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    { id: 'mis-3', title: 'Audit 4Context Logs', description: 'Review all 4Context transparency logs (7d).', status: 'inbox', assigneeId: null, priority: 'medium', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    { id: 'mis-4', title: 'Fine-tune Prompt Templates', description: 'Optimize prompts for customer interactions.', status: 'review', assigneeId: 'beta', priority: 'medium', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    { id: 'mis-5', title: 'Historical Data ETL Pipeline', description: 'Complete ETL for 10-year SPY data.', status: 'done', assigneeId: 'pico', priority: 'low', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    { id: 'mis-6', title: 'CI/CD Build Optimization', description: 'Reduce Docker build to sub-90s.', status: 'in_progress', assigneeId: 'kilo', priority: 'high', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    { id: 'mis-7', title: 'Gateway Migration Phase 1', description: 'Migrate auth endpoints to new gateway.', status: 'in_progress', assigneeId: 'flux', priority: 'critical', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    { id: 'mis-8', title: 'Token Budget Forecasting', description: 'Build v2 cost prediction model.', status: 'assigned', assigneeId: 'zen', priority: 'medium', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    { id: 'mis-9', title: 'Backfill 2022 Transactions', description: 'ETL batch 2 for transaction history.', status: 'inbox', assigneeId: null, priority: 'low', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    { id: 'mis-10', title: 'Alerting Rules Overhaul', description: 'Refresh PagerDuty configs to new SLOs.', status: 'assigned', assigneeId: 'vex', priority: 'high', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    { id: 'mis-11', title: 'Security Scan Compliance', description: 'Run full compliance scan via Red.', status: 'review', assigneeId: 'red', priority: 'critical', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    { id: 'mis-12', title: 'Uptime Dashboard', description: 'Build Grafana dashboard for Nova probes.', status: 'done', assigneeId: 'nova', priority: 'medium', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'mis-1', projectId: 'proj-1', title: 'Onboard Zendesk Integration', description: 'Connect Zendesk API and sync knowledge base.', status: 'in_progress', assigneeId: 'beta', priority: 'high', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'mis-2', projectId: 'proj-1', title: 'Deploy Market Scanner', description: 'Set up real-time market data feed for Pico.', status: 'assigned', assigneeId: 'pico', priority: 'critical', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'mis-3', projectId: 'proj-2', title: 'Audit 4Context Logs', description: 'Review all 4Context transparency logs (7d).', status: 'inbox', assigneeId: null, priority: 'medium', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'mis-4', projectId: 'proj-1', title: 'Fine-tune Prompt Templates', description: 'Optimize prompts for customer interactions.', status: 'review', assigneeId: 'beta', priority: 'medium', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'mis-5', projectId: 'proj-1', title: 'Historical Data ETL Pipeline', description: 'Complete ETL for 10-year SPY data.', status: 'done', assigneeId: 'pico', priority: 'low', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'mis-6', projectId: 'proj-2', title: 'CI/CD Build Optimization', description: 'Reduce Docker build to sub-90s.', status: 'in_progress', assigneeId: 'kilo', priority: 'high', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'mis-7', projectId: 'proj-3', title: 'Gateway Migration Phase 1', description: 'Migrate auth endpoints to new gateway.', status: 'in_progress', assigneeId: 'flux', priority: 'critical', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'mis-8', projectId: 'proj-2', title: 'Token Budget Forecasting', description: 'Build v2 cost prediction model.', status: 'assigned', assigneeId: 'zen', priority: 'medium', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'mis-9', projectId: 'proj-3', title: 'Backfill 2022 Transactions', description: 'ETL batch 2 for transaction history.', status: 'inbox', assigneeId: null, priority: 'low', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'mis-10', projectId: 'proj-3', title: 'Alerting Rules Overhaul', description: 'Refresh PagerDuty configs to new SLOs.', status: 'assigned', assigneeId: 'vex', priority: 'high', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'mis-11', projectId: 'proj-2', title: 'Security Scan Compliance', description: 'Run full compliance scan via Red.', status: 'review', assigneeId: 'red', priority: 'critical', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'mis-12', projectId: 'proj-1', title: 'Uptime Dashboard', description: 'Build Grafana dashboard for Nova probes.', status: 'done', assigneeId: 'nova', priority: 'medium', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
 ];
 
 // ── Activity Events ──

@@ -10,17 +10,17 @@ interface MetricCardProps {
 
 export const MetricCard: React.FC<MetricCardProps> = ({ label, value, unit, percentage, color = "emerald" }) => {
   const colorMap: Record<string, string> = {
-    emerald: "bg-emerald-500",
-    blue: "bg-blue-500",
-    amber: "bg-amber-500",
-    rose: "bg-rose-500",
+    emerald: "bg-amber-500",
+    blue: "bg-indigo-500",
+    amber: "bg-indigo-500",
+    rose: "bg-amber-500",
   };
 
   const textColorMap: Record<string, string> = {
-    emerald: "text-emerald-400",
-    blue: "text-blue-400",
-    amber: "text-amber-400",
-    rose: "text-rose-400",
+    emerald: "text-amber-400",
+    blue: "text-indigo-400",
+    amber: "text-indigo-400",
+    rose: "text-amber-400",
   };
 
   return (

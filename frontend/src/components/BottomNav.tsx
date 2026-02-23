@@ -22,7 +22,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab })
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex flex-col items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${activeTab === tab.id ? 'text-emerald-400 bg-emerald-400/10 shadow-sm' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+            className={`flex flex-col items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${activeTab === tab.id ? 'text-amber-400 bg-amber-400/10 shadow-sm' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
               }`}
           >
             <tab.icon size={22} />

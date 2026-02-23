@@ -22,7 +22,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
             <div className="bg-card border border-card-border rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 shadow-sm">
+                        <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-400 shadow-sm">
                             <Briefcase size={20} />
                         </div>
                         <h3 className="text-xl font-bold text-main-text">Create Project</h3>
@@ -41,7 +41,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                             onChange={e => setNewProject(p => ({ ...p, title: e.target.value }))}
                             placeholder="e.g. Website Conversion Optimization"
                             autoFocus
-                            className="w-full bg-black/5 border border-divider rounded-xl p-3 text-sm text-main-text outline-none focus:border-emerald-500/50 transition-all placeholder-dim-text"
+                            className="w-full bg-black/5 border border-divider rounded-xl p-3 text-sm text-main-text outline-none focus:border-amber-500/50 transition-all placeholder-dim-text"
                         />
                     </div>
                     <div>
@@ -51,7 +51,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                             onChange={e => setNewProject(p => ({ ...p, description: e.target.value }))}
                             placeholder="What should this project accomplish?"
                             rows={3}
-                            className="w-full bg-black/5 border border-divider rounded-xl p-3 text-sm text-main-text outline-none focus:border-emerald-500/50 transition-all resize-none placeholder-dim-text"
+                            className="w-full bg-black/5 border border-divider rounded-xl p-3 text-sm text-main-text outline-none focus:border-amber-500/50 transition-all resize-none placeholder-dim-text"
                         />
                     </div>
                     <div>
@@ -59,7 +59,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                         <select
                             value={newProject.leadAgentId}
                             onChange={e => setNewProject(p => ({ ...p, leadAgentId: e.target.value }))}
-                            className="w-full bg-black/5 border border-divider rounded-xl p-3 text-sm text-main-text outline-none appearance-none cursor-pointer focus:border-emerald-500/50 transition-all"
+                            className="w-full bg-black/5 border border-divider rounded-xl p-3 text-sm text-main-text outline-none appearance-none cursor-pointer focus:border-amber-500/50 transition-all"
                         >
                             <option value="">Select Squad Lead...</option>
                             {AGENTS.filter(a => a.tier === 'Top').map(a => <option key={a.id} value={a.id}>{a.name} ({a.role})</option>)}
@@ -72,7 +72,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                     <button
                         onClick={handleCreate}
                         disabled={!newProject.title || !newProject.leadAgentId}
-                        className="flex-1 bg-emerald-500 text-black py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
+                        className="flex-1 bg-amber-500 text-black py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-amber-400 transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)] disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
                     >
                         Create Project
                     </button>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Globe, Link, Plus, RefreshCw, ShieldCheck } from 'lucide-react';
 import type { DashboardData } from '../../types';
+import { PageHeader } from '../layout/PageHeader';
 
 interface SourcesPageProps {
     data: DashboardData | null;
@@ -12,19 +13,19 @@ interface SourcesPageProps {
 
 export const SourcesPage: React.FC<SourcesPageProps> = ({ data, syncingSource, onAddSource, onSyncSource, onViewFindings }) => {
     return (
-        <div className="space-y-8 mt-4">
-            <header className="flex justify-between items-end mb-12">
-                <div>
-                    <h1 className="text-4xl font-bold tracking-tight text-main-text mb-3">Live Environments</h1>
-                    <p className="text-secondary-text font-mono text-sm uppercase tracking-widest">External Data Connectors</p>
-                </div>
-                <button
-                    onClick={onAddSource}
-                    className="bg-emerald-500 text-black px-6 py-3 rounded-2xl text-sm font-bold uppercase tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:bg-emerald-400 transition-all flex items-center gap-2"
-                >
-                    <Plus size={18} /> Add Source
-                </button>
-            </header>
+        <div className="space-y-6">
+            <PageHeader
+                title="Live Environments"
+                subtitle="External Data Connectors"
+                actions={
+                    <button
+                        onClick={onAddSource}
+                        className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-black rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-amber-400 transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)]"
+                    >
+                        <Plus size={14} /> Add Source
+                    </button>
+                }
+            />
 
             <div className="grid grid-cols-1 gap-6">
                 {(!data?.sources || data.sources.length === 0) ? (
@@ -38,7 +39,7 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ data, syncingSource, o
                         <div key={source.id} className="p-8 bg-card border border-card-border rounded-[2rem] group relative shadow-md">
                             <div className="flex justify-between items-start mb-6">
                                 <div className="flex items-center gap-5">
-                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm ${source.status === 'online' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-black/10 text-muted-text border border-divider'}`}>
+                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm ${source.status === 'online' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-black/10 text-muted-text border border-divider'}`}>
                                         <Globe size={28} />
                                     </div>
                                     <div>
@@ -50,7 +51,7 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ data, syncingSource, o
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
-                                    <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest shadow-sm ${source.status === 'online' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+                                    <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest shadow-sm ${source.status === 'online' ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-500/10 text-amber-400'
                                         }`}>
                                         {source.status}
                                     </div>

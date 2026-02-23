@@ -21,43 +21,63 @@ export const AgentDetail: React.FC<AgentDetailProps> = ({
 }) => {
     return (
         <div style={{ animation: 'slideRackIn 0.3s forwards' }}>
+            {/* Agent name — use agent colour which is always vivid, readable on both themes */}
             <h1 className="detail-header-title" style={{ color: agent.color }}>{agent.name}</h1>
             <p className="detail-header-subtitle">{agent.role} • {agent.model} • {agent.provider}</p>
 
+            {/* Action buttons */}
             <div className="btn-group" style={{ marginTop: '0', marginBottom: '24px' }}>
-                <button className="btn-local" style={{ background: agent.color, color: '#000' }}>Review Logs</button>
+                <button className="btn-local" style={{ background: agent.color, color: '#000', border: 'none' }}>Review Logs</button>
                 <button className="btn-local" onClick={onReturnToFleet}>Return to Fleet</button>
             </div>
 
-            <div className="task-section-title"><Target size={14} style={{ verticalAlign: 'text-bottom', marginRight: '6px' }} /> Primary Goals</div>
-            {goals.length === 0 ? <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>No high level goals defined.</p> : null}
+            {/* ── Primary Goals ── */}
+            <div className="task-section-title">
+                <Target size={14} style={{ verticalAlign: 'text-bottom', marginRight: '6px' }} />
+                Primary Goals
+            </div>
+            {goals.length === 0
+                ? <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No high level goals defined.</p>
+                : null}
             {goals.map(goal => (
-                <div key={goal.id} className="goal-card border border-white/10">
+                <div key={goal.id} className="goal-card">
                     <div className="goal-title">{goal.title}</div>
                     <div className="goal-desc">{goal.desc}</div>
                 </div>
             ))}
 
-            <div className="task-section-title"><Flag size={14} style={{ verticalAlign: 'text-bottom', marginRight: '6px' }} /> Milestones</div>
-            {milestones.length === 0 ? <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>No sub-milestones assigned.</p> : null}
+            {/* ── Milestones ── */}
+            <div className="task-section-title">
+                <Flag size={14} style={{ verticalAlign: 'text-bottom', marginRight: '6px' }} />
+                Milestones
+            </div>
+            {milestones.length === 0
+                ? <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No sub-milestones assigned.</p>
+                : null}
             {milestones.map(m => (
-                <div key={m.id} className="milestone-card border border-white/5">
+                <div key={m.id} className="milestone-card">
                     <div className="milestone-header">
-                        <span style={{ color: m.progress === 100 ? agent.color : 'white' }}>{m.title}</span>
-                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>{m.progress}%</span>
+                        <span style={{ color: m.progress === 100 ? agent.color : 'var(--text-main)' }}>{m.title}</span>
+                        <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>{m.progress}%</span>
                     </div>
                     <div className="progress-bar-bg">
-                        <div className="progress-bar-fill" style={{ width: `${m.progress}%`, background: agent.color }}></div>
+                        <div className="progress-bar-fill" style={{ width: `${m.progress}%`, background: agent.color }} />
                     </div>
                 </div>
             ))}
 
-            <div className="task-section-title"><ListChecks size={14} style={{ verticalAlign: 'text-bottom', marginRight: '6px' }} /> Actionable Tasks</div>
-            {tasks.length === 0 ? <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>Agent is sitting idle. Assign tasks.</p> : null}
+            {/* ── Actionable Tasks ── */}
+            <div className="task-section-title">
+                <ListChecks size={14} style={{ verticalAlign: 'text-bottom', marginRight: '6px' }} />
+                Actionable Tasks
+            </div>
+            {tasks.length === 0
+                ? <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Agent is sitting idle. Assign tasks.</p>
+                : null}
             {tasks.map(task => {
                 const m = allMilestones.find(mi => mi.id === task.milestoneId);
                 return (
-                    <div key={task.id} className="task-card border border-white/5">
+                    <div key={task.id} className="task-card">
                         <div className="task-left">
                             <button className={`task-check ${task.completed ? 'completed' : ''}`} onClick={() => onToggleTask(task.id)}>
                                 {task.completed && <Check size={12} color="white" strokeWidth={3} />}
@@ -68,7 +88,7 @@ export const AgentDetail: React.FC<AgentDetailProps> = ({
                             </div>
                         </div>
                         <select
-                            className="reassign-select border border-white/20"
+                            className="reassign-select"
                             value={task.assigneeId}
                             onChange={(e) => onReassignTask(task.id, e.target.value)}
                         >
@@ -80,10 +100,14 @@ export const AgentDetail: React.FC<AgentDetailProps> = ({
                 );
             })}
 
-            <button onClick={onCreateTask} className="btn-local" style={{ width: '100%', marginTop: '16px', justifyContent: 'flex-start', background: 'transparent', border: '1px dashed rgba(255,255,255,0.2)' }}>
+            {/* Create task button */}
+            <button
+                onClick={onCreateTask}
+                className="btn-local"
+                style={{ width: '100%', marginTop: '16px', justifyContent: 'flex-start' }}
+            >
                 <Plus size={14} style={{ marginRight: '6px' }} /> Create new task
             </button>
         </div>
     );
 };
-

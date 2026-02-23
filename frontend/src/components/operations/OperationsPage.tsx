@@ -8,6 +8,7 @@ import type { MyTask, TaskStatus, LogEntry } from '../../data/agents';
 import type { ActivityEvent } from '../../types/activity';
 import type { Project } from '../../types/project';
 import { AGENTS } from '../../data/agents';
+import { PageHeader } from '../layout/PageHeader';
 
 interface OperationsPageProps {
     tasks: MyTask[];
@@ -22,26 +23,26 @@ interface OperationsPageProps {
 const STATUS_FLOW: TaskStatus[] = ['backlog', 'in_progress', 'review', 'done'];
 const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; icon: React.ElementType }> = {
     backlog: { label: 'Queued', color: '#71717a', icon: Circle },
-    in_progress: { label: 'Active', color: '#f59e0b', icon: Play },
-    review: { label: 'Review', color: '#8b5cf6', icon: Eye },
-    done: { label: 'Done', color: '#10b981', icon: CheckCircle2 },
+    in_progress: { label: 'Active', color: '#6366f1', icon: Play },
+    review: { label: 'Review', color: '#6366f1', icon: Eye },
+    done: { label: 'Done', color: '#f59e0b', icon: CheckCircle2 },
 };
 
 const LEVELS = ['all', 'info', 'warn', 'error', 'debug'] as const;
 const CATEGORIES = ['all', 'task', 'system', 'delegation', 'heartbeat', 'milestone'] as const;
 
 const levelColors: Record<string, string> = {
-    info: 'text-emerald-500',
-    warn: 'text-amber-500',
-    error: 'text-rose-500',
+    info: 'text-amber-500',
+    warn: 'text-indigo-500',
+    error: 'text-amber-500',
     debug: 'text-zinc-500',
 };
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-    completion: { icon: CheckCircle2, color: '#10b981', label: 'Completed' },
-    delegation: { icon: ArrowRight, color: '#3b82f6', label: 'Delegated' },
-    milestone: { icon: Flag, color: '#8b5cf6', label: 'Milestone' },
-    status_change: { icon: Activity, color: '#f59e0b', label: 'Status' },
+    completion: { icon: CheckCircle2, color: '#f59e0b', label: 'Completed' },
+    delegation: { icon: ArrowRight, color: '#6366f1', label: 'Delegated' },
+    milestone: { icon: Flag, color: '#6366f1', label: 'Milestone' },
+    status_change: { icon: Activity, color: '#6366f1', label: 'Status' },
 };
 
 export const OperationsPage: React.FC<OperationsPageProps> = ({
@@ -127,38 +128,35 @@ export const OperationsPage: React.FC<OperationsPageProps> = ({
     };
 
     return (
-        <div className="space-y-4">
-            {/* Unified Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-main-text flex items-center gap-3">
-                        Operating System
-                        <span className="text-xs font-mono text-muted-text uppercase tracking-[0.2em] bg-white/5 px-2 py-1 rounded">Fleet Hub</span>
-                    </h1>
-                    <p className="text-secondary-text font-mono text-xs uppercase tracking-widest mt-2">
-                        {activeTab === 'tasks' && `${filteredTasks.length} tasks synced • ${tasks.filter(t => t.completed).length} finalized • ${projects.length} cross-project stream`}
-                        {activeTab === 'activity' && `${successEvents.length} events caught • ${successEvents.filter(e => e.type === 'completion').length} wins • ${projects.length} nodes active`}
-                        {activeTab === 'logs' && `${filteredLogs.length} matching logs • Raw telemetry stream • ${projects.length} context shards`}
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    {activeTab === 'tasks' && (
-                        <button onClick={onCreateTask} className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-black rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-                            <Plus size={14} /> New Task
+        <div className="space-y-6">
+            <PageHeader
+                title="Operating System"
+                subtitle={
+                    activeTab === 'tasks'
+                        ? `${filteredTasks.length} tasks synced • ${tasks.filter(t => t.completed).length} finalized`
+                        : activeTab === 'activity'
+                            ? `${successEvents.length} events caught • ${successEvents.filter(e => e.type === 'completion').length} wins`
+                            : `${filteredLogs.length} matching logs • raw telemetry stream`
+                }
+                actions={
+                    <div className="flex items-center gap-3">
+                        {activeTab === 'tasks' && (
+                            <button onClick={onCreateTask} className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-black rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-amber-400 transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                                <Plus size={14} /> New Task
+                            </button>
+                        )}
+                        <button onClick={() => setSortDir(s => s === 'newest' ? 'oldest' : 'newest')} className="flex items-center gap-2 px-4 py-2 bg-black/5 border border-card-border rounded-xl text-xs text-muted-text hover:bg-black/10 hover:text-main-text transition-all">
+                            <ArrowUpDown size={14} /> {sortDir === 'newest' ? 'Newest First' : 'Oldest First'}
                         </button>
-                    )}
-                    <button onClick={() => setSortDir(s => s === 'newest' ? 'oldest' : 'newest')} className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-card-border rounded-xl text-xs text-muted-text hover:bg-white/10 hover:text-main-text transition-all">
-                        <ArrowUpDown size={14} /> {sortDir === 'newest' ? 'Newest First' : 'Oldest First'}
-                    </button>
-                </div>
-            </div>
+                    </div>
+                }
+            />
 
             {/* Tab Selector */}
             <div className="flex p-1 bg-card border border-card-border rounded-2xl w-fit mt-2">
                 {[
-                    { id: 'tasks', label: 'Tasks', icon: ClipboardList, color: 'text-emerald-400' },
-                    { id: 'activity', label: 'Activity', icon: Activity, color: 'text-blue-400' },
+                    { id: 'tasks', label: 'Tasks', icon: ClipboardList, color: 'text-amber-400' },
+                    { id: 'activity', label: 'Activity', icon: Activity, color: 'text-indigo-400' },
                     { id: 'logs', label: 'Logs', icon: Terminal, color: 'text-zinc-400' },
                 ].map(tab => (
                     <button
@@ -254,7 +252,7 @@ export const OperationsPage: React.FC<OperationsPageProps> = ({
                     )}
 
                     {(searchQuery || agentFilter !== 'all' || projectFilter !== 'all' || statusFilter !== 'all' || priorityFilter !== 'all' || (activeTab === 'logs' && (levelFilter !== 'all' || categoryFilter !== 'all'))) && (
-                        <button onClick={clearFilters} className="p-1.5 hover:bg-rose-500/10 text-rose-500 rounded-lg transition-colors" title="Clear All Filters">
+                        <button onClick={clearFilters} className="p-1.5 hover:bg-amber-500/10 text-amber-500 rounded-lg transition-colors" title="Clear All Filters">
                             <X size={14} />
                         </button>
                     )}
@@ -298,9 +296,9 @@ export const OperationsPage: React.FC<OperationsPageProps> = ({
                                                 {task.description && <span className="text-xs text-muted-text block truncate mt-1">{task.description}</span>}
                                             </div>
                                             <div className="flex justify-center">
-                                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded shadow-sm ${task.priority === 'critical' ? 'bg-rose-500/15 text-rose-400' :
-                                                    task.priority === 'high' ? 'bg-amber-500/15 text-amber-400' :
-                                                        task.priority === 'medium' ? 'bg-blue-500/15 text-blue-400' : 'bg-black/20 text-secondary-text'
+                                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded shadow-sm ${task.priority === 'critical' ? 'bg-amber-500/15 text-amber-400' :
+                                                    task.priority === 'high' ? 'bg-indigo-500/15 text-indigo-400' :
+                                                        task.priority === 'medium' ? 'bg-indigo-500/15 text-indigo-400' : 'bg-black/20 text-secondary-text'
                                                     }`}>{task.priority}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
@@ -327,15 +325,15 @@ export const OperationsPage: React.FC<OperationsPageProps> = ({
                 {activeTab === 'activity' && (
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
                         <div className="p-6 grid grid-cols-2 gap-4 border-b border-card-border bg-black/5">
-                            <div className="flex items-center gap-4 p-5 bg-emerald-500/5 rounded-2xl border border-emerald-500/20 shadow-sm">
-                                <Trophy className="text-emerald-400" size={24} />
+                            <div className="flex items-center gap-4 p-5 bg-amber-500/5 rounded-2xl border border-amber-500/20 shadow-sm">
+                                <Trophy className="text-amber-400" size={24} />
                                 <div>
                                     <p className="text-sm font-bold text-main-text uppercase tracking-wider">Operational Wins</p>
                                     <p className="text-xs text-muted-text font-mono mt-1">{successEvents.filter(e => e.type === 'completion').length} successful task closures</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4 p-5 bg-blue-500/5 rounded-2xl border border-blue-500/20 shadow-sm">
-                                <Flag className="text-blue-400" size={24} />
+                            <div className="flex items-center gap-4 p-5 bg-indigo-500/5 rounded-2xl border border-indigo-500/20 shadow-sm">
+                                <Flag className="text-indigo-400" size={24} />
                                 <div>
                                     <p className="text-sm font-bold text-main-text uppercase tracking-wider">Active Milestones</p>
                                     <p className="text-xs text-muted-text font-mono mt-1">{successEvents.filter(e => e.type === 'milestone').length} critical path breakthroughs</p>
@@ -415,7 +413,7 @@ export const OperationsPage: React.FC<OperationsPageProps> = ({
                                     const agent = AGENTS.find(a => a.id === log.agentId);
                                     const project = projects.find(p => p.id === log.projectId);
                                     return (
-                                        <div key={log.id} className="px-6 py-3 grid grid-cols-[100px_80px_100px_120px_100px_1fr] gap-4 items-center hover:bg-black/5 transition-colors border-l-2 border-transparent hover:border-emerald-500/30 group">
+                                        <div key={log.id} className="px-6 py-3 grid grid-cols-[100px_80px_100px_120px_100px_1fr] gap-4 items-center hover:bg-black/5 transition-colors border-l-2 border-transparent hover:border-amber-500/30 group">
                                             <span className="text-muted-text tabular-nums text-xs">{new Date(log.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
                                             <span className={`font-bold uppercase tracking-wider text-[10px] ${levelColors[log.level]}`}>{log.level.slice(0, 4)}</span>
                                             <span className="text-xs uppercase font-bold truncate" style={{ color: agent?.color || 'var(--text-muted)' }}>{agent?.name || 'SYS'}</span>
@@ -435,7 +433,7 @@ export const OperationsPage: React.FC<OperationsPageProps> = ({
             <div className="flex items-center justify-between px-6 py-4 bg-card border border-card-border rounded-2xl mt-4">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
                         <span className="text-xs font-bold text-main-text uppercase tracking-widest">Live Channel Optimized</span>
                     </div>
                     <div className="text-xs text-muted-text font-mono tracking-tighter">

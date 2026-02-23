@@ -25,12 +25,12 @@ export const AgentFleetView: React.FC<AgentFleetViewProps> = ({
                         <div className="info-card-header">
                             <div className="info-card-title" style={{ color: agent.color }}>
                                 {agent.name}
-                                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginLeft: '8px', fontWeight: 400 }}>{agent.role}</span>
+                                <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '8px', fontWeight: 400 }}>{agent.role}</span>
                             </div>
                             <span className="badge" style={{
-                                background: agent.status === 'idle' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
-                                color: agent.status === 'idle' ? '#10b981' : '#f59e0b',
-                                border: `1px solid ${agent.status === 'idle' ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}`
+                                background: agent.status === 'idle' ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.1)',
+                                color: agent.status === 'idle' ? '#f59e0b' : '#6366f1',
+                                border: `1px solid ${agent.status === 'idle' ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.2)'}`
                             }}>
                                 {agent.status}
                             </span>

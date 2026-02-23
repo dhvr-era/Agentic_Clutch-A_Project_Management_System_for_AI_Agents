@@ -25,7 +25,7 @@ export const AgentRack: React.FC<AgentRackProps> = ({ agents, title, activeId, i
                 />
             ))}
             {onCreateAgent && (
-                <button onClick={onCreateAgent} className="w-12 h-12 rounded-2xl border border-dashed border-white/10 flex items-center justify-center text-zinc-600 hover:text-emerald-400 hover:border-emerald-500/30 transition-all mt-2" title="Create Agent">
+                <button onClick={onCreateAgent} className="w-12 h-12 rounded-2xl border border-dashed flex items-center justify-center hover:text-amber-400 hover:border-amber-500/30 transition-all mt-2" style={{ borderColor: 'var(--glass-border)', color: 'var(--text-muted)' }} title="Create Agent">
                     <Plus size={18} />
                 </button>
             )}

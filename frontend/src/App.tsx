@@ -16,6 +16,7 @@ import type { MyTask, Milestone, Goal, LogEntry, TaskStatus } from './data/agent
 // Layout
 import { Sidebar } from './components/layout/Sidebar';
 import { SpecularHighlight } from './components/layout/SpecularHighlight';
+import { TopBar } from './components/layout/TopBar';
 
 // Agents
 import { AgentRack } from './components/agents/AgentRack';
@@ -330,128 +331,140 @@ export default function App() {
         onToggleTheme={toggleTheme}
       />
 
-      {/* Agents Tab — Custom Rack Layout */}
-      {activeTab === 'agents' ? (
-        <main className="flex-1 racks-container relative z-40 h-full overflow-hidden p-[20px]" style={{ display: 'flex' }}>
-          <AgentRack agents={topLevelAgents} title="Squad Leads" activeId={path[0]} isPushed={path.length > 0} onSelect={handleSelectTop} onCreateAgent={() => setShowCreateAgent(true)} />
-          {path[0] && workhorseAgents.length > 0 && (
-            <AgentRack agents={workhorseAgents} title="Workhorses" activeId={path[1]} isPushed={isDepth1Pushed} onSelect={handleSelectMid} />
-          )}
-          <div className="detail-view">
-            {!activeWorkhorseId && activeTopAgent ? (
-              <AgentFleetView topAgent={activeTopAgent} workhorseAgents={workhorseAgents} mockStats={mockStats} tasks={tasks} onSelectWorkhorse={handleSelectMid} />
-            ) : activeAgent ? (
-              <AgentDetail
-                agent={activeAgent}
-                goals={goals.filter(g => g.agentId === activeWorkhorseId)}
-                milestones={milestones.filter(m => m.agentId === activeWorkhorseId)}
-                tasks={tasks.filter(t => t.assigneeId === activeWorkhorseId)}
-                peerAgents={workhorseAgents}
-                onToggleTask={toggleTask}
-                onReassignTask={reassignTask}
-                onReturnToFleet={() => setPath([path[0]])}
-                allMilestones={milestones}
-                onCreateTask={() => openCreateTask(undefined, activeWorkhorseId)}
-              />
-            ) : null}
+      {/* Right column: TopBar + page content */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <TopBar activeTab={activeTab} onTabChange={(tab: string) => {
+          if (tab === 'operations') setActiveTab('operations_tasks');
+          else setActiveTab(tab);
+        }} />
+
+        <main className="flex-1 overflow-y-auto w-full relative">
+          <div className="max-w-[1300px] mx-auto w-full px-8 py-10 min-h-full flex flex-col">
+            {/* Agents Tab — Custom Rack Layout */}
+            {activeTab === 'agents' ? (
+              <div className="flex-1 racks-container relative z-40 overflow-hidden flex bg-card border border-card-border rounded-3xl p-6 shadow-sm">
+                <AgentRack agents={topLevelAgents} title="Squad Leads" activeId={path[0]} isPushed={path.length > 0} onSelect={handleSelectTop} onCreateAgent={() => setShowCreateAgent(true)} />
+                {path[0] && workhorseAgents.length > 0 && (
+                  <AgentRack agents={workhorseAgents} title="Workhorses" activeId={path[1]} isPushed={isDepth1Pushed} onSelect={handleSelectMid} />
+                )}
+                <div className="detail-view">
+                  {!activeWorkhorseId && activeTopAgent ? (
+                    <AgentFleetView topAgent={activeTopAgent} workhorseAgents={workhorseAgents} mockStats={mockStats} tasks={tasks} onSelectWorkhorse={handleSelectMid} />
+                  ) : activeAgent ? (
+                    <AgentDetail
+                      agent={activeAgent}
+                      goals={goals.filter(g => g.agentId === activeWorkhorseId)}
+                      milestones={milestones.filter(m => m.agentId === activeWorkhorseId)}
+                      tasks={tasks.filter(t => t.assigneeId === activeWorkhorseId)}
+                      peerAgents={workhorseAgents}
+                      onToggleTask={toggleTask}
+                      onReassignTask={reassignTask}
+                      onReturnToFleet={() => setPath([path[0]])}
+                      allMilestones={milestones}
+                      onCreateTask={() => openCreateTask(undefined, activeWorkhorseId)}
+                    />
+                  ) : null}
+                </div>
+              </div>
+            ) : (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab + (activeTab === 'projects' ? `-${selectedProjectId || 'list'}` : '')}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                  className="w-full flex-1"
+                >
+                  {activeTab === 'dashboard' && (
+                    <DashboardPage
+                      data={data}
+                      missions={missions}
+                      activity={activity}
+                      tasks={tasks}
+                      logs={logs}
+                      projects={projects}
+                      onNavigate={setActiveTab}
+                      onUpdateTaskStatus={handleUpdateTaskStatus}
+                      onCreateTask={() => openCreateTask()}
+                      onCreateAgent={() => setShowCreateAgent(true)}
+                      onCreateProject={() => setShowCreateProject(true)}
+                    />
+                  )}
+                  {activeTab === 'projects' && (
+                    <ProjectsPage
+                      projects={projects}
+                      tasks={tasks}
+                      milestones={milestones}
+                      missions={missions}
+                      onCreateProject={() => setShowCreateProject(true)}
+                      onOpenCreateTask={(projId) => openCreateTask(projId)}
+                      onSelectProject={setSelectedProjectId}
+                      onUpdateTaskStatus={handleUpdateTaskStatus}
+                      onMoveMission={moveMission}
+                      selectedProjectId={selectedProjectId}
+                    />
+                  )}
+                  {activeTab === 'missions' && <MissionBoard missions={missions} onMoveMission={moveMission} />}
+                  {activeTab === 'operations' && (
+                    <OperationsPage
+                      tasks={tasks}
+                      activity={activity}
+                      logs={logs}
+                      projects={projects}
+                      onUpdateTaskStatus={handleUpdateTaskStatus}
+                      onCreateTask={() => openCreateTask()}
+                    />
+                  )}
+                  {activeTab === 'tasks' && (
+                    <OperationsPage
+                      initialTab="tasks"
+                      tasks={tasks}
+                      activity={activity}
+                      logs={logs}
+                      projects={projects}
+                      onUpdateTaskStatus={handleUpdateTaskStatus}
+                      onCreateTask={() => openCreateTask()}
+                    />
+                  )}
+                  {activeTab === 'activity' && (
+                    <OperationsPage
+                      initialTab="activity"
+                      tasks={tasks}
+                      activity={activity}
+                      logs={logs}
+                      projects={projects}
+                      onUpdateTaskStatus={handleUpdateTaskStatus}
+                      onCreateTask={() => openCreateTask()}
+                    />
+                  )}
+                  {activeTab === 'logs' && (
+                    <OperationsPage
+                      initialTab="logs"
+                      tasks={tasks}
+                      activity={activity}
+                      logs={logs}
+                      projects={projects}
+                      onUpdateTaskStatus={handleUpdateTaskStatus}
+                      onCreateTask={() => openCreateTask()}
+                    />
+                  )}
+                  {activeTab === 'analytics' && <AnalyticsPage data={data} />}
+                  {activeTab === 'sources' && (
+                    <SourcesPage
+                      data={data}
+                      syncingSource={syncingSource}
+                      onAddSource={() => setIsAddingSource(true)}
+                      onSyncSource={handleSyncSource}
+                      onViewFindings={(id, name) => setViewingFindings({ sourceId: id, name })}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            )}
           </div>
         </main>
-      ) : (
-        <main className="flex-1 overflow-y-auto p-8 relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab + (activeTab === 'projects' ? `-${selectedProjectId || 'list'}` : '')}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-              className="max-w-5xl mx-auto"
-            >
-              {activeTab === 'dashboard' && (
-                <DashboardPage
-                  data={data}
-                  missions={missions}
-                  activity={activity}
-                  tasks={tasks}
-                  logs={logs}
-                  projects={projects}
-                  onNavigate={setActiveTab}
-                  onUpdateTaskStatus={handleUpdateTaskStatus}
-                  onCreateTask={() => openCreateTask()}
-                  onCreateAgent={() => setShowCreateAgent(true)}
-                  onCreateProject={() => setShowCreateProject(true)}
-                />
-              )}
-              {activeTab === 'projects' && (
-                <ProjectsPage
-                  projects={projects}
-                  tasks={tasks}
-                  milestones={milestones}
-                  onCreateProject={() => setShowCreateProject(true)}
-                  onOpenCreateTask={(projId) => openCreateTask(projId)}
-                  onSelectProject={setSelectedProjectId}
-                  onUpdateTaskStatus={handleUpdateTaskStatus}
-                  selectedProjectId={selectedProjectId}
-                />
-              )}
-              {activeTab === 'missions' && <MissionBoard missions={missions} onMoveMission={moveMission} />}
-              {activeTab === 'operations' && (
-                <OperationsPage
-                  tasks={tasks}
-                  activity={activity}
-                  logs={logs}
-                  projects={projects}
-                  onUpdateTaskStatus={handleUpdateTaskStatus}
-                  onCreateTask={() => openCreateTask()}
-                />
-              )}
-              {activeTab === 'tasks' && (
-                <OperationsPage
-                  initialTab="tasks"
-                  tasks={tasks}
-                  activity={activity}
-                  logs={logs}
-                  projects={projects}
-                  onUpdateTaskStatus={handleUpdateTaskStatus}
-                  onCreateTask={() => openCreateTask()}
-                />
-              )}
-              {activeTab === 'activity' && (
-                <OperationsPage
-                  initialTab="activity"
-                  tasks={tasks}
-                  activity={activity}
-                  logs={logs}
-                  projects={projects}
-                  onUpdateTaskStatus={handleUpdateTaskStatus}
-                  onCreateTask={() => openCreateTask()}
-                />
-              )}
-              {activeTab === 'logs' && (
-                <OperationsPage
-                  initialTab="logs"
-                  tasks={tasks}
-                  activity={activity}
-                  logs={logs}
-                  projects={projects}
-                  onUpdateTaskStatus={handleUpdateTaskStatus}
-                  onCreateTask={() => openCreateTask()}
-                />
-              )}
-              {activeTab === 'analytics' && <AnalyticsPage data={data} />}
-              {activeTab === 'sources' && (
-                <SourcesPage
-                  data={data}
-                  syncingSource={syncingSource}
-                  onAddSource={() => setIsAddingSource(true)}
-                  onSyncSource={handleSyncSource}
-                  onViewFindings={(id, name) => setViewingFindings({ sourceId: id, name })}
-                />
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </main>
-      )}
+      </div>
 
       {/* ── Create Task Modal ── */}
       {showCreateTask && (
@@ -523,8 +536,8 @@ export default function App() {
                       <div className="flex justify-between items-start mb-3">
                         <h4 className="text-sm font-bold text-zinc-200">{finding.title}</h4>
                         <span className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest ${finding.severity === 'critical' ? 'bg-rose-500/20 text-rose-400' :
-                          finding.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                            finding.severity === 'medium' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'
+                          finding.severity === 'high' ? 'bg-amber-500/20 text-amber-400' :
+                            finding.severity === 'medium' ? 'bg-amber-500/20 text-amber-400' : 'bg-indigo-500/20 text-indigo-400'
                           }`}>{finding.severity}</span>
                       </div>
                       <p className="text-xs text-zinc-400 mb-3 leading-relaxed">{finding.description}</p>

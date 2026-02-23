@@ -13,9 +13,9 @@ interface TasksPageProps {
 const STATUS_FLOW: TaskStatus[] = ['backlog', 'in_progress', 'review', 'done'];
 const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; icon: React.ElementType }> = {
     backlog: { label: 'Queued', color: '#71717a', icon: Circle },
-    in_progress: { label: 'Active', color: '#f59e0b', icon: Play },
-    review: { label: 'Review', color: '#8b5cf6', icon: Eye },
-    done: { label: 'Done', color: '#10b981', icon: CheckCircle2 },
+    in_progress: { label: 'Active', color: '#6366f1', icon: Play },
+    review: { label: 'Review', color: '#6366f1', icon: Eye },
+    done: { label: 'Done', color: '#f59e0b', icon: CheckCircle2 },
 };
 
 export const TasksPage: React.FC<TasksPageProps> = ({ tasks, onUpdateTaskStatus, onCreateTask }) => {
@@ -38,7 +38,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({ tasks, onUpdateTaskStatus,
                     <h1 className="text-2xl font-bold text-white">All Tasks</h1>
                     <p className="text-zinc-600 font-mono text-[10px] uppercase tracking-widest">{tasks.length} tasks • {tasks.filter(t => t.completed).length} done</p>
                 </div>
-                <button onClick={onCreateTask} className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-black rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                <button onClick={onCreateTask} className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-black rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 transition-all shadow-[0_0_15px_rgba(245,158,11,0.3)]">
                     <Plus size={12} /> New Task
                 </button>
             </div>
@@ -65,9 +65,9 @@ export const TasksPage: React.FC<TasksPageProps> = ({ tasks, onUpdateTaskStatus,
                                     <span className={`text-[11px] block truncate ${task.completed ? 'text-zinc-600 line-through' : 'text-zinc-300'}`}>{task.title}</span>
                                     {task.description && <span className="text-[9px] text-zinc-600 block truncate">{task.description}</span>}
                                 </div>
-                                <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded text-center ${task.priority === 'critical' ? 'bg-rose-500/15 text-rose-400' :
-                                        task.priority === 'high' ? 'bg-amber-500/15 text-amber-400' :
-                                            task.priority === 'medium' ? 'bg-blue-500/15 text-blue-400' : 'bg-zinc-500/15 text-zinc-500'
+                                <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded text-center ${task.priority === 'critical' ? 'bg-amber-500/15 text-amber-400' :
+                                        task.priority === 'high' ? 'bg-indigo-500/15 text-indigo-400' :
+                                            task.priority === 'medium' ? 'bg-indigo-500/15 text-indigo-400' : 'bg-zinc-500/15 text-zinc-500'
                                     }`}>{task.priority}</span>
                                 <span className="text-[9px] font-mono truncate" style={{ color: agent?.color }}>{agent?.name}</span>
                                 <span className="text-[9px] font-mono text-zinc-500 text-right">{task.cost ? `$${task.cost.toFixed(2)}` : '—'}</span>
