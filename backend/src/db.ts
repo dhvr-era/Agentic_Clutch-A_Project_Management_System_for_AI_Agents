@@ -12,12 +12,13 @@ export const pool = new Pool({
 export async function initDB() {
   const client = await pool.connect();
   try {
+    // Create tables
     await client.query(`
       CREATE TABLE IF NOT EXISTS agents (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         parent_id INTEGER REFERENCES agents(id),
-        tier VARCHAR(50) NOT NULL, -- 'Green', 'Cyan', 'Blue'
+        tier VARCHAR(50) NOT NULL,
         openclaw_id VARCHAR(255),
         status VARCHAR(50) DEFAULT 'inactive'
       );
@@ -47,21 +48,48 @@ export async function initDB() {
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
-      -- Optional: Insert dummy agents for UI testing if empty
-      const { rowCount } = await client.query('SELECT COUNT(*) FROM agents');
-      if (rowCount === 0 || parseInt(rowCount.count) === 0) {
-        await client.query(\`
-          INSERT INTO agents (name, tier, openclaw_id, status) VALUES 
-          ('Alpha Prime', 'Green', 'alpha_1', 'running'),
-          ('Mid Coordinator', 'Cyan', 'coord_1', 'running'),
-          ('Task Worker 1', 'Blue', 'worker_1', 'running');
-          
-          -- Set hierarchy
-          UPDATE agents SET parent_id = 1 WHERE name = 'Mid Coordinator';
-          UPDATE agents SET parent_id = 2 WHERE name = 'Task Worker 1';
-        \`);
-      }
+      CREATE TABLE IF NOT EXISTS bot_scores (
+        id SERIAL PRIMARY KEY,
+        bot_id VARCHAR(255),
+        task_id INTEGER REFERENCES tasks(id),
+        score INTEGER CHECK (score BETWEEN 0 AND 100),
+        review_notes TEXT,
+        rated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS bot_promotions (
+        id SERIAL PRIMARY KEY,
+        bot_id VARCHAR(255),
+        from_tier VARCHAR(50),
+        to_tier VARCHAR(50),
+        promoted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        reason TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS project_reviews (
+        id SERIAL PRIMARY KEY,
+        project_id INTEGER,
+        summary TEXT,
+        improvements TEXT,
+        avg_bot_score DECIMAL(5,2),
+        reviewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
+
+    // Seed default agents if table is empty (JS logic outside SQL)
+    const countResult = await client.query('SELECT COUNT(*) FROM agents');
+    if (parseInt(countResult.rows[0].count) === 0) {
+      const genieResult = await client.query(
+        `INSERT INTO agents (name, tier, openclaw_id, status) VALUES ($1, $2, $3, $4) RETURNING id`,
+        ['Genie', 'Green', 'genie', 'running']
+      );
+      await client.query(
+        `INSERT INTO agents (name, tier, openclaw_id, status, parent_id) VALUES ($1, $2, $3, $4, $5)`,
+        ['Scraper Bot', 'Blue', 'scraper-bot-01', 'inactive', genieResult.rows[0].id]
+      );
+      console.log('Seeded agents: Genie (orchestrator) + Scraper Bot (worker)');
+    }
+
     console.log('Database schema initialized.');
   } catch (err) {
     console.error('Error initializing database', err);

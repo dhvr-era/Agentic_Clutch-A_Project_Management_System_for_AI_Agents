@@ -2,7 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { pool, initDB } from './db.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const server = createServer(app);
@@ -37,7 +42,6 @@ app.post('/api/tasks', async (req, res) => {
             'INSERT INTO tasks (agent_id, description) VALUES ($1, $2) RETURNING *',
             [agent_id, description]
         );
-        // Broadcast live event
         broadcast('new_task', result.rows[0]);
         res.json(result.rows[0]);
     } catch (err) {
@@ -45,10 +49,33 @@ app.post('/api/tasks', async (req, res) => {
     }
 });
 
-// Periodic simulated sync from OpenClaw/usage.jsonl
+// Dashboard endpoint — aggregates DB data for the frontend
+app.get('/api/dashboard', async (req, res) => {
+    try {
+        const [agents, tasks, tokenUsage, logs] = await Promise.all([
+            pool.query('SELECT * FROM agents ORDER BY id ASC'),
+            pool.query('SELECT * FROM tasks ORDER BY assigned_at DESC LIMIT 20'),
+            pool.query("SELECT COALESCE(SUM(tokens_in),0) as total_tokens, COALESCE(SUM(cost_usd),0) as daily_cost FROM token_usage WHERE timestamp > NOW() - INTERVAL '24 hours'"),
+            pool.query('SELECT * FROM logs ORDER BY timestamp DESC LIMIT 20'),
+        ]);
+        res.json({
+            usage_summary: {
+                daily_cost: parseFloat(tokenUsage.rows[0].daily_cost) || 0,
+                total_tokens: parseInt(tokenUsage.rows[0].total_tokens) || 0,
+                monthly_cost: (parseFloat(tokenUsage.rows[0].daily_cost) || 0) * 30,
+            },
+            agents: agents.rows,
+            active_tasks: tasks.rows,
+            recent_logs: logs.rows,
+            sources: [],
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// Periodic simulated sync
 setInterval(async () => {
-    // Normally this would parse external files or run child processes
-    // Simulating token usage generation for live sync testing
     try {
         const activeAgents = await pool.query("SELECT id FROM agents WHERE status = 'running'");
         if (activeAgents.rows.length > 0) {
@@ -64,9 +91,19 @@ setInterval(async () => {
     }
 }, 5000);
 
+// Serve frontend static files
+app.use(express.static(join(__dirname, '../../frontend/dist')));
+app.get('*', (req: express.Request, res: express.Response) => {
+    if (!req.path.startsWith('/api')) {
+        res.sendFile(join(__dirname, '../../frontend/dist/index.html'));
+    } else {
+        res.status(404).json({ error: 'Not found' });
+    }
+});
+
 // Start
 initDB().then(() => {
-    server.listen(4000, () => {
-        console.log('Backend server running on http://localhost:4000');
+    server.listen(4002, '100.64.0.1', () => {
+        console.log('Backend server running on http://100.64.0.1:4002');
     });
 });
