@@ -6,10 +6,10 @@ import type { DashboardData } from './types';
 import type { Mission, MissionStatus } from './types/mission';
 import type { ActivityEvent } from './types/activity';
 import type { Project } from './types/project';
-import type { AgentConfig } from './types/agent';
+import type { AgentConfig, AgentRole } from './types/agent';
 import {
   INITIAL_TASKS, INITIAL_GOALS, INITIAL_MILESTONES, INITIAL_MISSIONS, INITIAL_ACTIVITY, INITIAL_LOGS, INITIAL_PROJECTS,
-  AGENTS, AGENTS_INITIAL,
+  AGENTS,
 } from './data/agents';
 import type { MyTask, Milestone, Goal, LogEntry, TaskStatus } from './data/agents';
 
@@ -62,8 +62,8 @@ export default function App() {
   const [findings, setFindings] = useState<any[]>([]);
 
   // ── Agent State ──
-  const [path, setPath] = useState<string[]>(['alpha']);
-  const [agents, setAgents] = useState<AgentConfig[]>([...AGENTS_INITIAL]);
+  const [path, setPath] = useState<string[]>([]);
+  const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [mockStats, setMockStats] = useState({ tasks: 12, uptime: 99.8, latency: 1.2, cost: 0.04 });
   const [tasks, setTasks] = useState<MyTask[]>(INITIAL_TASKS);
   const [milestones] = useState<Milestone[]>(INITIAL_MILESTONES);
@@ -108,10 +108,47 @@ export default function App() {
 
   // Keep global AGENTS in sync
   useEffect(() => {
-    // Update the exported AGENTS array for components that import it directly
     AGENTS.length = 0;
     AGENTS.push(...agents);
   }, [agents]);
+
+  // ── Load agents from DB on mount ──
+  useEffect(() => {
+    const ROLE_MAP: Record<string, AgentRole> = {
+      'genie': 'Squad Lead',
+      'scraper-bot-01': 'Executor',
+      'analyst-bot-01': 'Analyst',
+      'security-bot-01': 'Monitor',
+    };
+    const ICON_LOOKUP: Record<string, any> = {
+      'genie': Brain,
+      'scraper-bot-01': Database,
+      'analyst-bot-01': BarChart,
+      'security-bot-01': Shield2,
+    };
+    const VALID_STATUSES = ['running', 'idle', 'busy', 'standby', 'offline', 'error'];
+
+    fetch('/api/agents')
+      .then(r => r.ok ? r.json() : [])
+      .then((dbAgents: any[]) => {
+        if (!Array.isArray(dbAgents) || dbAgents.length === 0) return;
+        const converted: AgentConfig[] = dbAgents.map(a => ({
+          id: String(a.id),
+          parentId: a.parent_id ? String(a.parent_id) : null,
+          name: a.name,
+          role: ROLE_MAP[a.openclaw_id] || (a.tier === 'Green' ? 'Squad Lead' : 'Analyst'),
+          tier: (a.tier === 'Green' ? 'Top' : 'Workhorse') as 'Top' | 'Workhorse',
+          color: a.tier === 'Green' ? '#f59e0b' : '#6366f1',
+          status: (VALID_STATUSES.includes(a.status) ? a.status : 'idle') as any,
+          provider: 'OpenClaw',
+          icon: ICON_LOOKUP[a.openclaw_id] || Server,
+        }));
+        setAgents(converted);
+        const firstLead = converted.find(a => a.parentId === null);
+        if (firstLead) setPath([firstLead.id]);
+      })
+      .catch(() => {});
+  }, []);
 
   // ── Data Fetching ──
   const fetchData = async () => {
@@ -406,17 +443,7 @@ export default function App() {
                     />
                   )}
                   {activeTab === 'missions' && <MissionBoard missions={missions} onMoveMission={moveMission} />}
-                  {activeTab === 'operations' && (
-                    <OperationsPage
-                      tasks={tasks}
-                      activity={activity}
-                      logs={logs}
-                      projects={projects}
-                      onUpdateTaskStatus={handleUpdateTaskStatus}
-                      onCreateTask={() => openCreateTask()}
-                    />
-                  )}
-                  {activeTab === 'tasks' && (
+                  {(activeTab === 'operations' || activeTab === 'operations_tasks') && (
                     <OperationsPage
                       initialTab="tasks"
                       tasks={tasks}
@@ -427,7 +454,7 @@ export default function App() {
                       onCreateTask={() => openCreateTask()}
                     />
                   )}
-                  {activeTab === 'activity' && (
+                  {activeTab === 'operations_activity' && (
                     <OperationsPage
                       initialTab="activity"
                       tasks={tasks}
@@ -438,7 +465,7 @@ export default function App() {
                       onCreateTask={() => openCreateTask()}
                     />
                   )}
-                  {activeTab === 'logs' && (
+                  {activeTab === 'operations_logs' && (
                     <OperationsPage
                       initialTab="logs"
                       tasks={tasks}

@@ -12,6 +12,7 @@ import type { Project } from '../../types/project';
 import { AGENTS, TIER_COLORS } from '../../data/agents';
 import { OperationsPanel } from './OperationsPanel';
 import { PageHeader } from '../layout/PageHeader';
+import { OpenClawStatus } from './OpenClawStatus';
 
 interface DashboardPageProps {
     data: DashboardData | null;
@@ -137,6 +138,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     </div>
                 }
             />
+
+            <OpenClawStatus />
 
             {/* ── KPI Strip ── */}
             <div className="grid grid-cols-4 gap-2">

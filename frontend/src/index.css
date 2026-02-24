@@ -64,6 +64,25 @@
     color: var(--text-main);
     @apply transition-colors duration-500 overflow-hidden;
   }
+
+  /* Force dark background on all native select dropdowns across the portal.
+     Browser-native <option> elements ignore Tailwind utility classes —
+     this base rule is the only reliable fix across Chrome/Firefox/Safari. */
+  select {
+    background-color: #1a1a1f;
+    color: var(--text-main);
+  }
+
+  select option {
+    background-color: #1a1a1f;
+    color: var(--text-main);
+  }
+
+  select option:checked,
+  select option:hover {
+    background-color: #2a2a32;
+    color: var(--text-main);
+  }
 }
 
 @layer components {
