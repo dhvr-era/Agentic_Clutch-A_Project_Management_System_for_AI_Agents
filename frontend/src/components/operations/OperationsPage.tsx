@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
     ClipboardList, Activity, Terminal, Filter, ArrowUpDown, Plus,
     Search, X, Circle, Play, Eye, CheckCircle2, Flag, Trophy,
-    ArrowRight, Clock
+    ArrowRight, Clock, Lightbulb, FlaskConical
 } from 'lucide-react';
 import type { MyTask, TaskStatus, LogEntry } from '../../data/agents';
 import type { ActivityEvent } from '../../types/activity';
@@ -20,10 +20,12 @@ interface OperationsPageProps {
     initialTab?: 'tasks' | 'activity' | 'logs';
 }
 
-const STATUS_FLOW: TaskStatus[] = ['backlog', 'in_progress', 'review', 'done'];
+const STATUS_FLOW: TaskStatus[] = ['planning', 'backlog', 'in_progress', 'testing', 'review', 'done'];
 const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; icon: React.ElementType }> = {
+    planning: { label: 'Planning', color: '#8b5cf6', icon: Lightbulb },
     backlog: { label: 'Queued', color: '#71717a', icon: Circle },
     in_progress: { label: 'Active', color: '#6366f1', icon: Play },
+    testing: { label: 'Testing', color: '#06b6d4', icon: FlaskConical },
     review: { label: 'Review', color: '#6366f1', icon: Eye },
     done: { label: 'Done', color: '#f59e0b', icon: CheckCircle2 },
 };
@@ -69,7 +71,7 @@ export const OperationsPage: React.FC<OperationsPageProps> = ({
         if (priorityFilter !== 'all') result = result.filter(t => t.priority === priorityFilter);
         if (searchQuery) result = result.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()) || t.description?.toLowerCase().includes(searchQuery.toLowerCase()));
 
-        const statusOrder: Record<TaskStatus, number> = { in_progress: 0, review: 1, backlog: 2, done: 3 };
+        const statusOrder: Record<TaskStatus, number> = { in_progress: 0, testing: 1, review: 2, planning: 3, backlog: 4, done: 5 };
         const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
         result.sort((a, b) => {

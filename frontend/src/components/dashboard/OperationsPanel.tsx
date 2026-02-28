@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ClipboardList, Activity, Terminal, Circle, Play, Eye, CheckCircle2 } from 'lucide-react';
+import { ClipboardList, Activity, Terminal, Circle, Play, Eye, CheckCircle2, Lightbulb, FlaskConical } from 'lucide-react';
 import type { MyTask, TaskStatus, LogEntry } from '../../data/agents';
 import type { ActivityEvent } from '../../types/activity';
 import { AGENTS } from '../../data/agents';
@@ -12,10 +12,12 @@ interface OperationsPanelProps {
     onNavigate?: (tab: string) => void;
 }
 
-const STATUS_FLOW: TaskStatus[] = ['backlog', 'in_progress', 'review', 'done'];
+const STATUS_FLOW: TaskStatus[] = ['planning', 'backlog', 'in_progress', 'testing', 'review', 'done'];
 const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; icon: React.ElementType }> = {
+    planning: { label: 'Planning', color: '#8b5cf6', icon: Lightbulb },
     backlog: { label: 'Queued', color: '#71717a', icon: Circle },
     in_progress: { label: 'Active', color: '#6366f1', icon: Play },
+    testing: { label: 'Testing', color: '#06b6d4', icon: FlaskConical },
     review: { label: 'Review', color: '#6366f1', icon: Eye },
     done: { label: 'Done', color: '#f59e0b', icon: CheckCircle2 },
 };

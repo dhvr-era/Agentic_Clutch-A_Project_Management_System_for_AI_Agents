@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     Briefcase, Plus, CheckCircle, Flag, ChevronRight, ArrowLeft,
-    Circle, Clock, Play, Eye, CheckCircle2, Target, LayoutGrid
+    Circle, Clock, Play, Eye, CheckCircle2, Target, LayoutGrid, Lightbulb, FlaskConical
 } from 'lucide-react';
 import type { Project } from '../../types/project';
 import type { Mission, MissionStatus } from '../../types/mission';
@@ -23,10 +23,12 @@ interface ProjectsPageProps {
     selectedProjectId: string | null;
 }
 
-const STATUS_FLOW: TaskStatus[] = ['backlog', 'in_progress', 'review', 'done'];
+const STATUS_FLOW: TaskStatus[] = ['planning', 'backlog', 'in_progress', 'testing', 'review', 'done'];
 const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; icon: React.ElementType }> = {
+    planning: { label: 'Planning', color: '#8b5cf6', icon: Lightbulb },
     backlog: { label: 'Queued', color: '#71717a', icon: Circle },
     in_progress: { label: 'Active', color: '#6366f1', icon: Play },
+    testing: { label: 'Testing', color: '#06b6d4', icon: FlaskConical },
     review: { label: 'Review', color: '#6366f1', icon: Eye },
     done: { label: 'Done', color: '#f59e0b', icon: CheckCircle2 },
 };

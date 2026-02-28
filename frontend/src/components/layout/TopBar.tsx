@@ -1,4 +1,5 @@
-import { LayoutDashboard, Users, Briefcase, Target, Activity, BarChart, Globe, UserCircle2 } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, Target, Activity, BarChart, Globe, UserCircle2, Square, Pause, Play } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface TopBarProps {
     activeTab: string;
@@ -24,6 +25,27 @@ const PAGE_META: Record<string, { icon: React.ComponentType<{ size?: number; cla
 export const TopBar: React.FC<TopBarProps> = ({ activeTab, onTabChange }) => {
     const page = PAGE_META[activeTab] ?? PAGE_META['dashboard'];
     const PageIcon = page.icon;
+
+    const [mode, setMode] = useState<'run' | 'paused' | 'killed'>('run');
+    const [acting, setActing] = useState(false);
+
+    useEffect(() => {
+        const poll = () => fetch('/api/system/state').then(r => r.json()).then(d => setMode(d.mode)).catch(() => {});
+        poll();
+        const id = setInterval(poll, 5000);
+        return () => clearInterval(id);
+    }, []);
+
+    const setSystemMode = async (next: 'run' | 'paused' | 'killed') => {
+        setActing(true);
+        try {
+            await fetch('/api/system/state', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: next }) });
+            setMode(next);
+        } finally { setActing(false); }
+    };
+
+    const modeColor = mode === 'run' ? 'text-emerald-400' : mode === 'paused' ? 'text-amber-400' : 'text-rose-400';
+    const modeDot   = mode === 'run' ? 'bg-emerald-400' : mode === 'paused' ? 'bg-amber-400' : 'bg-rose-500';
 
     return (
         <header
@@ -56,6 +78,47 @@ export const TopBar: React.FC<TopBarProps> = ({ activeTab, onTabChange }) => {
                     <PageIcon size={16} className="text-amber-400" />
                     <span className="text-xs font-bold uppercase tracking-widest text-secondary-text">{page.label}</span>
                 </div>
+            </div>
+
+            {/* Centre — System controls */}
+            <div className="flex items-center gap-2">
+                {/* Status indicator */}
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-black/20 border border-white/5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${modeDot} ${mode === 'run' ? 'animate-pulse' : ''}`} />
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${modeColor}`}>{mode}</span>
+                </div>
+
+                {mode !== 'paused' && mode !== 'killed' && (
+                    <button onClick={() => setSystemMode('paused')} disabled={acting}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-40"
+                        title="Pause — stop dispatching new tasks">
+                        <Pause size={11} />Pause
+                    </button>
+                )}
+
+                {mode === 'paused' && (
+                    <button onClick={() => setSystemMode('run')} disabled={acting}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-40"
+                        title="Resume operations">
+                        <Play size={11} />Resume
+                    </button>
+                )}
+
+                {mode !== 'killed' && (
+                    <button onClick={() => setSystemMode('killed')} disabled={acting}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-40"
+                        title="Kill — halt all agent activity immediately">
+                        <Square size={11} />Kill
+                    </button>
+                )}
+
+                {mode === 'killed' && (
+                    <button onClick={() => setSystemMode('run')} disabled={acting}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-40 animate-pulse"
+                        title="Resume from kill">
+                        <Play size={11} />Resume
+                    </button>
+                )}
             </div>
 
             {/* Right — User / profile button */}

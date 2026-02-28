@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Activity, BarChart3, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Activity, BarChart3, Info, DollarSign, Pencil, Check, X } from 'lucide-react';
 import { Panel } from '../Panel';
 import { MetricCard } from '../MetricCard';
 import type { DashboardData } from '../../types';
@@ -9,8 +9,90 @@ interface AnalyticsPageProps {
     data: DashboardData | null;
 }
 
+interface BudgetData {
+    limits: { daily_usd: number; monthly_usd: number };
+    spend:  { daily: number; monthly: number };
+}
+
+function SpendBar({ label, spend, limit, color }: { label: string; spend: number; limit: number; color: string }) {
+    const pct = limit > 0 ? Math.min((spend / limit) * 100, 100) : 0;
+    const warn = pct >= 80;
+    const barColor = pct >= 100 ? 'bg-rose-500' : warn ? 'bg-amber-400' : `bg-${color}-400`;
+    return (
+        <div className="space-y-2">
+            <div className="flex justify-between items-center text-xs">
+                <span className="uppercase font-bold text-secondary-text tracking-wider">{label}</span>
+                <span className={`font-mono font-bold ${warn ? 'text-amber-400' : 'text-main-text'}`}>
+                    ${spend.toFixed(4)} <span className="text-muted-text font-normal">/ ${limit.toFixed(2)}</span>
+                </span>
+            </div>
+            <div className="h-2 w-full bg-black/20 rounded-full overflow-hidden border border-divider">
+                <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
+            </div>
+            <div className="flex justify-between text-[10px] text-muted-text">
+                <span>{pct.toFixed(1)}% used</span>
+                <span>${(limit - spend).toFixed(4)} remaining</span>
+            </div>
+        </div>
+    );
+}
+
 export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     const [showEfficiencyInfo, setShowEfficiencyInfo] = useState(false);
+    const [budget, setBudget] = useState<BudgetData | null>(null);
+    const [editing, setEditing] = useState(false);
+    const [draftDaily, setDraftDaily] = useState('');
+    const [draftMonthly, setDraftMonthly] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState('');
+
+    const fetchBudget = () => {
+        fetch('/api/budget')
+            .then(r => r.json())
+            .then(d => setBudget(d))
+            .catch(() => {});
+    };
+
+    useEffect(() => {
+        fetchBudget();
+        const id = setInterval(fetchBudget, 15000);
+        return () => clearInterval(id);
+    }, []);
+
+    const startEdit = () => {
+        if (!budget) return;
+        setDraftDaily(budget.limits.daily_usd.toString());
+        setDraftMonthly(budget.limits.monthly_usd.toString());
+        setSaveError('');
+        setEditing(true);
+    };
+
+    const cancelEdit = () => { setEditing(false); setSaveError(''); };
+
+    const saveBudget = async () => {
+        const daily = parseFloat(draftDaily);
+        const monthly = parseFloat(draftMonthly);
+        if (isNaN(daily) || isNaN(monthly) || daily <= 0 || monthly <= 0) {
+            setSaveError('Enter valid positive numbers');
+            return;
+        }
+        setSaving(true);
+        setSaveError('');
+        try {
+            const r = await fetch('/api/budget', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ daily_usd: daily, monthly_usd: monthly }),
+            });
+            if (!r.ok) throw new Error('Save failed');
+            await fetchBudget();
+            setEditing(false);
+        } catch (e: any) {
+            setSaveError(e.message || 'Save failed');
+        } finally {
+            setSaving(false);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -74,7 +156,67 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
                     </div>
                 </Panel>
             </div>
+
+            {/* Budget controls */}
+            <Panel
+                title="Spend Limits"
+                icon={<DollarSign size={18} />}
+                headerAction={
+                    editing ? (
+                        <div className="flex items-center gap-2">
+                            {saveError && <span className="text-xs text-rose-400">{saveError}</span>}
+                            <button onClick={saveBudget} disabled={saving}
+                                className="flex items-center gap-1 text-xs px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors disabled:opacity-50">
+                                <Check size={12} /> {saving ? 'Saving…' : 'Save'}
+                            </button>
+                            <button onClick={cancelEdit}
+                                className="flex items-center gap-1 text-xs px-3 py-1 rounded-lg bg-black/10 text-muted-text hover:bg-black/20 transition-colors">
+                                <X size={12} /> Cancel
+                            </button>
+                        </div>
+                    ) : (
+                        <button onClick={startEdit}
+                            className="flex items-center gap-1 text-xs px-3 py-1 rounded-lg bg-black/10 text-muted-text hover:bg-amber-500/20 hover:text-amber-400 transition-colors">
+                            <Pencil size={12} /> Edit limits
+                        </button>
+                    )
+                }
+            >
+                {budget ? (
+                    <div className="space-y-6">
+                        {editing ? (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs uppercase font-bold text-secondary-text tracking-wider">Daily limit ($)</label>
+                                    <input
+                                        type="number" min="0.01" step="0.50"
+                                        value={draftDaily}
+                                        onChange={e => setDraftDaily(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-xl bg-black/10 border border-divider text-main-text font-mono text-sm focus:outline-none focus:border-amber-500/50"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs uppercase font-bold text-secondary-text tracking-wider">Monthly limit ($)</label>
+                                    <input
+                                        type="number" min="0.01" step="1"
+                                        value={draftMonthly}
+                                        onChange={e => setDraftMonthly(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-xl bg-black/10 border border-divider text-main-text font-mono text-sm focus:outline-none focus:border-amber-500/50"
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-5">
+                                <SpendBar label="Daily" spend={budget.spend.daily} limit={budget.limits.daily_usd} color="amber" />
+                                <SpendBar label="Monthly" spend={budget.spend.monthly} limit={budget.limits.monthly_usd} color="indigo" />
+                            </div>
+                        )}
+                        <p className="text-[10px] text-muted-text">Limits apply to all agents via privacy proxy. Changes take effect immediately.</p>
+                    </div>
+                ) : (
+                    <div className="text-xs text-muted-text">Loading…</div>
+                )}
+            </Panel>
         </div>
     );
 };
-

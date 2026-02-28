@@ -27,7 +27,7 @@ export const AGENTS_INITIAL: AgentConfig[] = [];
 export const AGENTS: AgentConfig[] = [];
 
 // ── Task Types ──
-export type TaskStatus = 'backlog' | 'in_progress' | 'review' | 'done';
+export type TaskStatus = 'planning' | 'backlog' | 'in_progress' | 'testing' | 'review' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
 
 export interface TaskComment {
@@ -51,6 +51,8 @@ export type MyTask = {
     cost?: number;
     createdAt: string;
     completed: boolean;
+    progress?: number;
+    statusMessage?: string;
 };
 
 export type Milestone = { id: string; title: string; progress: number; agentId: string; projectId?: string };

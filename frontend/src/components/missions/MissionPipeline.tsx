@@ -2,11 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import type { Mission, MissionStatus } from '../../types/mission';
 import { MISSION_COLUMNS } from '../../types/mission';
 import { AGENTS, TIER_COLORS } from '../../data/agents';
-import { ChevronRight, Pause, Play, Info, Target } from 'lucide-react';
+import { ChevronRight, Pause, Play, Info, Target, Plus } from 'lucide-react';
 
 interface MissionPipelineProps {
     missions: Mission[];
     onMoveMission: (missionId: string, newStatus: MissionStatus) => void;
+    onSelectMission?: (mission: Mission) => void;
+    onCreateMission?: () => void;
     /** If set, filters missions to only this project */
     projectId?: string;
 }
@@ -18,21 +20,25 @@ const priorityColors: Record<string, string> = {
     low: 'bg-zinc-500/20 text-zinc-400',
 };
 
-const STATUS_FLOW: MissionStatus[] = ['inbox', 'assigned', 'in_progress', 'review', 'done'];
+const STATUS_FLOW: MissionStatus[] = ['planning', 'inbox', 'assigned', 'in_progress', 'testing', 'review', 'done'];
 
 const COLUMN_DESCRIPTIONS: Record<MissionStatus, string> = {
+    planning: 'Scoping and design phase',
     inbox: 'New missions waiting for agent assignment',
     assigned: 'Agent assigned, queued for execution',
     in_progress: 'Agent is actively working',
+    testing: 'In testing — awaiting verification',
     review: 'Agent finished — awaiting your review',
     done: 'Completed and approved',
 };
 
 export const MissionPipeline: React.FC<MissionPipelineProps> = ({
-    missions, onMoveMission, projectId
+    missions, onMoveMission, onSelectMission, onCreateMission, projectId
 }) => {
     const [autoPilot, setAutoPilot] = useState(true);
     const [showInfo, setShowInfo] = useState(false);
+    const [dragMissionId, setDragMissionId] = useState<string | null>(null);
+    const [dragOverCol, setDragOverCol] = useState<MissionStatus | null>(null);
 
     // Filter to project scope if provided
     const scopedMissions = projectId
@@ -62,6 +68,35 @@ export const MissionPipeline: React.FC<MissionPipelineProps> = ({
         }
     };
 
+    // ── Drag and Drop ──
+    const handleDragStart = (e: React.DragEvent, missionId: string) => {
+        setDragMissionId(missionId);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent, colKey: MissionStatus) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        setDragOverCol(colKey);
+    };
+
+    const handleDrop = (e: React.DragEvent, colKey: MissionStatus) => {
+        e.preventDefault();
+        if (dragMissionId && dragMissionId !== colKey) {
+            const mission = scopedMissions.find(m => m.id === dragMissionId);
+            if (mission && mission.status !== colKey) {
+                onMoveMission(dragMissionId, colKey);
+            }
+        }
+        setDragMissionId(null);
+        setDragOverCol(null);
+    };
+
+    const handleDragEnd = () => {
+        setDragMissionId(null);
+        setDragOverCol(null);
+    };
+
     const totalMissions = scopedMissions.length;
     const doneCount = scopedMissions.filter(m => m.status === 'done').length;
     const pct = totalMissions > 0 ? Math.round((doneCount / totalMissions) * 100) : 0;
@@ -86,6 +121,17 @@ export const MissionPipeline: React.FC<MissionPipelineProps> = ({
                     </div>
                     <span className="text-sm font-bold font-mono text-amber-400 shrink-0 w-10 text-right">{pct}%</span>
                 </div>
+
+                {/* New Mission button */}
+                {onCreateMission && (
+                    <button
+                        onClick={onCreateMission}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/25 transition-all"
+                    >
+                        <Plus size={11} />
+                        New
+                    </button>
+                )}
 
                 {/* Info button */}
                 <button
@@ -113,8 +159,8 @@ export const MissionPipeline: React.FC<MissionPipelineProps> = ({
             {showInfo && (
                 <div className="p-4 bg-card border border-card-border rounded-xl text-xs text-secondary-text leading-relaxed space-y-2">
                     <p className="text-main-text font-bold text-sm">How Mission Control Works</p>
-                    <p>Missions flow <strong className="text-amber-500">automatically</strong> through the pipeline as agents execute work. Each column represents a stage in the agent pipeline.</p>
-                    <div className="grid grid-cols-5 gap-2 mt-2">
+                    <p>Missions flow <strong className="text-amber-500">automatically</strong> through the pipeline as agents execute work. Each column represents a stage in the agent pipeline. <strong className="text-indigo-400">Drag cards</strong> between columns or click a card to view details.</p>
+                    <div className="grid grid-cols-7 gap-2 mt-2">
                         {MISSION_COLUMNS.map(col => (
                             <div key={col.key} className="text-center p-2 bg-black/5 rounded-lg border border-divider">
                                 <div className="w-2 h-2 rounded-full mx-auto mb-1" style={{ background: col.color }} />
@@ -128,11 +174,18 @@ export const MissionPipeline: React.FC<MissionPipelineProps> = ({
             )}
 
             {/* ── Kanban Columns ── */}
-            <div className="grid grid-cols-5 gap-3 flex-1 min-h-0">
+            <div className="grid grid-cols-7 gap-2 flex-1 min-h-0">
                 {MISSION_COLUMNS.map(col => {
                     const colMissions = scopedMissions.filter(m => m.status === col.key);
+                    const isDropTarget = dragOverCol === col.key;
                     return (
-                        <div key={col.key} className="flex flex-col rounded-2xl bg-card border border-card-border overflow-hidden shadow-sm min-h-0">
+                        <div
+                            key={col.key}
+                            className={`flex flex-col rounded-2xl border overflow-hidden shadow-sm min-h-0 transition-all ${isDropTarget ? 'bg-indigo-500/5 border-indigo-500/40 shadow-indigo-500/10' : 'bg-card border-card-border'}`}
+                            onDragOver={(e) => handleDragOver(e, col.key)}
+                            onDrop={(e) => handleDrop(e, col.key)}
+                            onDragLeave={() => setDragOverCol(null)}
+                        >
                             {/* Column Header */}
                             <div className="px-3 py-2.5 border-b border-card-border bg-black/5 shrink-0"
                                 style={{ borderTop: `3px solid ${col.color}` }}>
@@ -146,18 +199,27 @@ export const MissionPipeline: React.FC<MissionPipelineProps> = ({
                             {/* Cards */}
                             <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 custom-scrollbar">
                                 {colMissions.length === 0 ? (
-                                    <div className="flex items-center justify-center h-12 opacity-20">
-                                        <span className="text-[10px] font-mono uppercase text-muted-text">Empty</span>
+                                    <div className={`flex items-center justify-center h-12 rounded-xl border-2 border-dashed transition-all ${isDropTarget ? 'border-indigo-500/40 opacity-60' : 'opacity-20 border-transparent'}`}>
+                                        <span className="text-[10px] font-mono uppercase text-muted-text">
+                                            {isDropTarget ? 'Drop here' : 'Empty'}
+                                        </span>
                                     </div>
                                 ) : colMissions.map(mission => {
                                     const assignee = mission.assigneeId ? AGENTS.find(a => a.id === mission.assigneeId) : null;
                                     const isLead = assignee?.tier === 'Top';
                                     const tierC = isLead ? TIER_COLORS.lead : TIER_COLORS.workhorse;
                                     const canAdvance = col.key !== 'done';
+                                    const isDragging = dragMissionId === mission.id;
                                     return (
-                                        <div key={mission.id}
-                                            className="p-3 rounded-xl bg-black/5 border border-divider hover:bg-black/10 transition-all group shadow-sm"
-                                            style={{ borderLeft: assignee ? `3px solid ${assignee.color}` : undefined }}>
+                                        <div
+                                            key={mission.id}
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, mission.id)}
+                                            onDragEnd={handleDragEnd}
+                                            onClick={() => onSelectMission?.(mission)}
+                                            className={`p-3 rounded-xl bg-black/5 border border-divider hover:bg-black/10 transition-all group shadow-sm cursor-pointer select-none ${isDragging ? 'opacity-40 scale-95' : 'hover:shadow-md'}`}
+                                            style={{ borderLeft: assignee ? `3px solid ${assignee.color}` : undefined }}
+                                        >
                                             {/* Title + priority */}
                                             <div className="flex items-start justify-between gap-2 mb-2">
                                                 <h4 className="text-xs font-semibold text-main-text leading-tight">{mission.title}</h4>
@@ -188,7 +250,7 @@ export const MissionPipeline: React.FC<MissionPipelineProps> = ({
                                                 )}
                                                 {canAdvance && (
                                                     <button
-                                                        onClick={() => handleAdvance(mission.id, col.key)}
+                                                        onClick={(e) => { e.stopPropagation(); handleAdvance(mission.id, col.key); }}
                                                         className="w-5 h-5 rounded flex items-center justify-center text-muted-text hover:text-main-text bg-black/10 hover:bg-black/20 transition-all opacity-0 group-hover:opacity-100 border border-divider"
                                                         title={`Advance to ${STATUS_FLOW[STATUS_FLOW.indexOf(col.key) + 1]?.replace('_', ' ')}`}
                                                     >

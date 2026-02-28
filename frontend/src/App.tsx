@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { RefreshCw, Globe, ShieldCheck, Server, ShieldCheck as Shield2, MessagesSquare, BarChart, Database, Cpu, Brain, Radio, Wifi } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { DashboardData } from './types';
-import type { Mission, MissionStatus } from './types/mission';
+import type { Mission, MissionStatus, MissionPriority } from './types/mission';
 import type { ActivityEvent } from './types/activity';
 import type { Project } from './types/project';
 import type { AgentConfig, AgentRole } from './types/agent';
@@ -11,7 +11,7 @@ import {
   INITIAL_TASKS, INITIAL_GOALS, INITIAL_MILESTONES, INITIAL_MISSIONS, INITIAL_ACTIVITY, INITIAL_LOGS, INITIAL_PROJECTS,
   AGENTS,
 } from './data/agents';
-import type { MyTask, Milestone, Goal, LogEntry, TaskStatus } from './data/agents';
+import type { MyTask, Milestone, Goal, LogEntry, TaskStatus, TaskPriority } from './data/agents';
 
 // Layout
 import { Sidebar } from './components/layout/Sidebar';
@@ -32,6 +32,8 @@ import { OperationsPage } from './components/operations/OperationsPage';
 
 // New Features
 import { MissionBoard } from './components/missions/MissionBoard';
+import { OutboxPage } from './components/outbox/OutboxPage';
+import { ApprovalsPage } from './components/approvals/ApprovalsPage';
 
 // Shared Modals
 import { CreateTaskModal } from './components/shared/CreateTaskModal';
@@ -92,6 +94,9 @@ export default function App() {
   // ── Create Project Modal ──
   const [showCreateProject, setShowCreateProject] = useState(false);
 
+  // ── Pending Approvals Count ──
+  const [pendingApprovals, setPendingApprovals] = useState(0);
+
   // ── Theme State ──
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     return (localStorage.getItem('theme') as 'light' | 'dark') || 'dark';
@@ -150,12 +155,91 @@ export default function App() {
       .catch(() => {});
   }, []);
 
+  // ── Status Maps ──
+  const dbToTaskStatus = (s: string): TaskStatus =>
+    s === 'in_progress' ? 'in_progress' : s === 'done' ? 'done' : s === 'failed' ? 'done' : 'backlog';
+  const taskToDbStatus = (s: TaskStatus): string =>
+    s === 'in_progress' || s === 'review' ? 'in_progress' : s === 'done' ? 'done' : 'pending';
+  const dbToMissionStatus = (s: string): MissionStatus =>
+    s === 'in_progress' ? 'in_progress' : s === 'done' ? 'done' : s === 'failed' ? 'done' : 'inbox';
+
+  // ── Fetch Projects from DB ──
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch('/api/projects');
+      if (!res.ok) return;
+      const dbProjects: any[] = await res.json();
+      const mapped = dbProjects.map(p => ({
+        id: String(p.id),
+        title: p.title,
+        description: p.description || '',
+        leadAgentId: p.lead_agent_id ? String(p.lead_agent_id) : '1',
+        status: (['active','completed','paused'].includes(p.status) ? p.status : 'active') as Project['status'],
+        createdAt: p.created_at,
+        updatedAt: p.updated_at,
+      }));
+      setProjects(mapped);
+    } catch { /* keep existing state */ }
+  };
+
+  // ── Fetch Tasks from DB ──
+  const fetchTasks = async () => {
+    try {
+      const res = await fetch('/api/tasks');
+      if (!res.ok) return;
+      const dbTasks: any[] = await res.json();
+      const mapped: MyTask[] = dbTasks.map(t => ({
+        id: String(t.id),
+        title: t.description,
+        description: t.description,
+        status: dbToTaskStatus(t.status),
+        priority: 'medium' as TaskPriority,
+        assigneeId: t.agent_id ? String(t.agent_id) : '1',
+        projectId: t.project_id ? String(t.project_id) : undefined,
+        comments: [],
+        createdAt: t.assigned_at,
+        completed: t.status === 'done',
+        progress: t.progress ?? 0,
+        statusMessage: t.status_message ?? undefined,
+      }));
+      setTasks(mapped);
+      const VALID_MISSION_STATUSES = ['planning', 'inbox', 'assigned', 'in_progress', 'testing', 'review', 'done'];
+      const mappedMissions: Mission[] = dbTasks.map(t => ({
+        id: String(t.id),
+        title: t.description,
+        description: t.agent_name ? `Assigned to ${t.agent_name}` : 'Unassigned',
+        status: (t.mission_status && VALID_MISSION_STATUSES.includes(t.mission_status))
+          ? t.mission_status as MissionStatus
+          : dbToMissionStatus(t.status),
+        assigneeId: t.agent_id ? String(t.agent_id) : null,
+        priority: 'medium' as MissionPriority,
+        projectId: t.project_id ? String(t.project_id) : undefined,
+        createdAt: t.assigned_at,
+        updatedAt: t.assigned_at,
+      }));
+      setMissions(mappedMissions);
+    } catch { /* keep existing state */ }
+  };
+
   // ── Data Fetching ──
   const fetchData = async () => {
     try {
       const response = await fetch('/api/dashboard');
       if (response.ok) {
-        setData(await response.json());
+        const d = await response.json();
+        setData(d);
+        // Sync logs from DB
+        if (Array.isArray(d.recent_logs) && d.recent_logs.length > 0) {
+          const mappedLogs: LogEntry[] = d.recent_logs.map((l: any) => ({
+            id: String(l.id),
+            agentId: String(l.agent_id || '1'),
+            level: (['info','warn','error','debug'].includes(l.log_level) ? l.log_level : 'info') as LogEntry['level'],
+            category: 'system' as LogEntry['category'],
+            message: l.message,
+            timestamp: l.timestamp,
+          }));
+          setLogs(mappedLogs);
+        }
       } else {
         setData({ usage_summary: { daily_cost: 4.5, total_tokens: 154000, monthly_cost: 135 }, active_tasks: [], agents: [], recent_logs: [], sources: [] } as DashboardData);
       }
@@ -167,14 +251,57 @@ export default function App() {
   };
 
   useEffect(() => {
+    const fetchPendingApprovals = () => {
+      fetch('/api/approvals')
+        .then(r => r.ok ? r.json() : [])
+        .then((data: any[]) => setPendingApprovals(data.filter((a: any) => a.status === 'pending').length))
+        .catch(() => {});
+    };
+
     fetchData();
+    fetchTasks();
+    fetchProjects();
+    fetchPendingApprovals();
+    const approvalsInterval = setInterval(fetchPendingApprovals, 15000);
     const interval = setInterval(fetchData, 5000);
+    const taskInterval = setInterval(fetchTasks, 10000);
     const mockInterval = setInterval(() => {
       setMockStats(prev => ({ ...prev, latency: 1.0 + (Math.random() * 0.4), cost: prev.cost + 0.001 }));
     }, 3000);
     const handleMouseMove = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY });
     window.addEventListener('mousemove', handleMouseMove);
-    return () => { clearInterval(interval); clearInterval(mockInterval); window.removeEventListener('mousemove', handleMouseMove); };
+
+    // ── WebSocket — live task progress ──
+    const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${wsProto}//${window.location.host}`);
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.event === 'task_progress' || msg.event === 'task_updated') {
+          const t = msg.data;
+          setTasks(prev => prev.map(task =>
+            task.id === String(t.id)
+              ? { ...task, status: dbToTaskStatus(t.status), progress: t.progress ?? task.progress, statusMessage: t.status_message ?? task.statusMessage, completed: t.status === 'done' }
+              : task
+          ));
+        }
+        if (msg.event === 'new_task') {
+          fetchTasks();
+        }
+        if (msg.event === 'agent_registered' || msg.event === 'agent_updated') {
+          fetch('/api/agents').then(r => r.json()).then(() => {}).catch(() => {});
+        }
+      } catch { /* ignore malformed messages */ }
+    };
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(taskInterval);
+      clearInterval(mockInterval);
+      clearInterval(approvalsInterval);
+      window.removeEventListener('mousemove', handleMouseMove);
+      ws.close();
+    };
   }, []);
 
   // ── Agent Helpers ──
@@ -205,6 +332,12 @@ export default function App() {
       completed: taskData.status === 'done',
     };
     setTasks(prev => [newTask, ...prev]);
+    // Persist to DB
+    fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agent_id: parseInt(taskData.assigneeId) || 1, description: taskData.title }),
+    }).then(() => fetchTasks()).catch(() => {});
 
     // Fire activity event
     const agent = agents.find(a => a.id === taskData.assigneeId);
@@ -231,6 +364,14 @@ export default function App() {
 
   const handleUpdateTaskStatus = (taskId: string, status: TaskStatus) => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status, completed: status === 'done' } : t));
+    // Persist to DB (only numeric IDs are real DB rows)
+    if (!taskId.startsWith('t-')) {
+      fetch(`/api/tasks/${taskId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: taskToDbStatus(status) }),
+      }).catch(() => {});
+    }
 
     const task = tasks.find(t => t.id === taskId);
     if (task) {
@@ -266,6 +407,11 @@ export default function App() {
       updatedAt: new Date().toISOString(),
     };
     setProjects(prev => [newProject, ...prev]);
+    fetch('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: projData.title, description: projData.description, lead_agent_id: parseInt(projData.leadAgentId) || 1, status: projData.status }),
+    }).then(() => fetchProjects()).catch(() => {});
     setActivity(prev => [{
       id: `act-${Date.now()}`,
       type: 'milestone' as const,
@@ -310,6 +456,15 @@ export default function App() {
   // ── Mission Helpers ──
   const moveMission = (missionId: string, newStatus: MissionStatus) => {
     setMissions(prev => prev.map(m => m.id === missionId ? { ...m, status: newStatus, updatedAt: new Date().toISOString() } : m));
+    // Persist to DB (only numeric IDs are real DB rows)
+    if (!missionId.startsWith('m-')) {
+      // Update full 7-stage mission_status
+      fetch(`/api/missions/${missionId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      }).catch(() => {});
+    }
     const mission = missions.find(m => m.id === missionId);
     if (mission) {
       setActivity(prev => [{
@@ -366,6 +521,7 @@ export default function App() {
         }}
         theme={theme}
         onToggleTheme={toggleTheme}
+        pendingApprovals={pendingApprovals}
       />
 
       {/* Right column: TopBar + page content */}
@@ -442,7 +598,7 @@ export default function App() {
                       selectedProjectId={selectedProjectId}
                     />
                   )}
-                  {activeTab === 'missions' && <MissionBoard missions={missions} onMoveMission={moveMission} />}
+                  {activeTab === 'missions' && <MissionBoard missions={missions} onMoveMission={moveMission} onCreateMission={() => openCreateTask()} />}
                   {(activeTab === 'operations' || activeTab === 'operations_tasks') && (
                     <OperationsPage
                       initialTab="tasks"
@@ -477,6 +633,8 @@ export default function App() {
                     />
                   )}
                   {activeTab === 'analytics' && <AnalyticsPage data={data} />}
+{activeTab === 'outbox' && <OutboxPage />}
+                  {activeTab === 'approvals' && <ApprovalsPage />}
                   {activeTab === 'sources' && (
                     <SourcesPage
                       data={data}
